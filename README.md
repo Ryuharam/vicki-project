@@ -51,7 +51,6 @@ flowchart TD
 ├── pyproject.toml
 ├── src
 │   ├── api
-│   │   ├── __pycache__
 │   │   └── main.py
 │   ├── graph.py
 │   ├── prompts.py

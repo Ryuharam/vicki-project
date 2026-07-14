@@ -1,5 +1,4 @@
 # VectorDB에서 관련 문서 검색(Search/Retrieve)
-from functools import lru_cache
 from langchain_core.documents import Document
 
 from app.core.vectordb import get_vectorstore
@@ -7,7 +6,6 @@ from app.core.vectordb import get_vectorstore
 TOP_K = 3
 
 
-@lru_cache
 def get_retriever():
     vectorstore = get_vectorstore()
     return vectorstore.as_retriever(search_kwargs={"k": TOP_K})

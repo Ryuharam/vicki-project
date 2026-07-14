@@ -2,10 +2,14 @@ import os
 import shutil
 from pathlib import Path
 
+from dotenv import load_dotenv
 from langchain_ollama import OllamaEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -16,7 +20,8 @@ CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
 TOP_K = 3
 
-embedding = OllamaEmbeddings(model="bge-m3")
+# embedding = OllamaEmbeddings(model="bge-m3")
+embedding = GoogleGenerativeAIEmbeddings(model="gemini-embedding-2-preview")
 splitter = RecursiveCharacterTextSplitter(
     chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP
 )

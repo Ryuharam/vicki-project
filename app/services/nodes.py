@@ -42,7 +42,6 @@ async def preprocess_node(state: ReviewBotState) -> dict:
         diff_summary += (
             f"\n파일명: {file.filename} \n{file.patch or "변경 내용 없음"}\n"
         )
-    print(f"[확인]\n {diff_summary}")
 
     initial_messages = HumanMessage(
         content=f"우리 팀 컨벤션 가이드를 준수했는지 검사해 줘. \n Pull request title: {pr_title} \nPull request body: {pr_body} \n{diff_summary}"
@@ -69,7 +68,7 @@ async def review_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
     result = await review_agent.ainvoke({"messages": state["messages"]})
 
     # structured output이 있으면 파싱 후 최종 리뷰 완성
-    if "structured_output" in result:
+    if "structured_response" in result:
         logger.info(f"structured_output 있음\n{result.keys()}")
 
     # 없으면 평문 그대로 반환

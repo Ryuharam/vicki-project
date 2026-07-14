@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from langchain_core.messages import HumanMessage
 from langgraph.runtime import Runtime
 
+from app.schemas.response import ReviewComments
 from app.schemas.state import ReviewBotState, ReviewBotContext
 from app.services.github_service import (
     request_access_token,
@@ -67,14 +68,52 @@ async def review_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
 
     result = await review_agent.ainvoke({"messages": state["messages"]})
 
+    logger.info(f"result key 확인 : {result.keys()}")
+
     # structured output이 있으면 파싱 후 최종 리뷰 완성
     if "structured_response" in result:
-        logger.info(f"structured_output 있음\n{result.keys()}")
+        logger.info("structured_output 있음")
+        structured = result["structured_response"]
+        logger.info(f"확인: \n{structured}")
+        review = parsing_response(structured)
+        return {"review_result": review}
 
     # 없으면 평문 그대로 반환
     last_message = result["messages"][-1].content
 
     return {"review_result": last_message}
+
+
+def parsing_response(response: ReviewComments) -> str:
+    """structurd_response를 최종 응답 형태로 바꿉니다."""
+    if not response.comments:
+        return (
+            f"## Summary\n"
+            f"{response.summary}\n\n"
+            "## Comments\n\n"
+            "리뷰할 사항이 없습니다."
+        )
+
+    lines = [
+        "## Summary",
+        response.summary,
+        "",
+        "## Comments",
+        "",
+    ]
+
+    for i, comment in enumerate(response.comments, start=1):
+        lines.extend(
+            [
+                f"### {i}. [{comment.severity}] {comment.title}",
+                f"- category: {comment.category}",
+                f"- issue: {comment.issue}",
+                f"- suggestion: {comment.suggestion}",
+                "",
+            ]
+        )
+
+    return "\n".join(lines)
 
 
 async def comment_node(state: ReviewBotState):

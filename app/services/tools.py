@@ -1,6 +1,10 @@
+import logging
+
 from langchain_core.tools import tool
 
 from app.repositories.retriever import search
+
+logger = logging.getLogger("uvicorn.error")
 
 
 @tool
@@ -13,6 +17,7 @@ def search_convention(query: str) -> str:
     Returns:
         result: chromadb에서 검색한 결과(string)
     """
+    logger.info("[Tool] search convention")
     docs = search(query=query)
 
     return "\n\n".join(doc.page_content for doc in docs)

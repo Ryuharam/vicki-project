@@ -1,4 +1,4 @@
-## 코드리뷰 봇 프로제젝트
+## 코드리뷰 봇 프로젝트
 GitHub 에서 사용자가 Pull Request를 열었을 때 코드 리뷰 후 comment를 달아주는 bot 프로젝트
 
 ## 주요기능
@@ -18,42 +18,37 @@ flowchart TD
     PR --> WEBHOOK["GitHub App<br/>Webhook"]
     WEBHOOK --> API["FastAPI"]
 
-    API --> AGENT
+    API["FastAPI"] --> preprocess_node --> review_node --> comment_node 
 
-    subgraph AGENT["Review Agent"]
-        direction TB
-        LOG["LoggingMiddleware"]
-        LLM["LLM"]
-    end
-
-    LLM --> TOOLS
-
-    subgraph TOOLS["Tools"]
-        direction TB
-
-        C1["get_changed_files"]
-        C2["get_full_code"]
-        C3["search_convention (RAG)"]
-        C4["generate_review"]
-        C5["write_comment"]
-    end
-
-    C5 --> COMMENT([GitHub PR Comment])
 ```
 
 ## 프로젝트 구조
 ```
+.
 ├── README.md
+├── app
+│   ├── api
+│   │   └── webhook_router.py
+│   ├── core
+│   │   └── vectordb.py
+│   ├── main.py
+│   ├── repositories
+│   │   └── retriever.py
+│   ├── schemas
+│   │   ├── response.py
+│   │   └── state.py
+│   └── services
+│       ├── agents.py
+│       ├── builder.py
+│       ├── github_service.py
+│       ├── nodes.py
+│       ├── prompts.py
+│       └── tools.py
 ├── chroma_db
 ├── data
 ├── docs
 ├── ingest.py
 ├── pyproject.toml
-├── src
-│   ├── api
-│   │   └── main.py
-│   ├── graph.py
-│   ├── prompts.py
-│   └── tools.py
+├── secret
 └── uv.lock
 ```

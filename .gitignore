@@ -7,3 +7,4 @@ logs/
 requirments_backup.txt
 chroma_db/
 data/
+secret/

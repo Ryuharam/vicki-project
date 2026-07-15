@@ -9,13 +9,15 @@ from langgraph.checkpoint.memory import InMemorySaver
 from app.services.tools import search_convention
 from app.services.prompts import SYSTEM_PROMPT
 from app.schemas.response import ReviewComments
+from app.core.llm import get_model
 
 load_dotenv()
 
 
 def get_review_agent():
     # model = ChatOllama(model="gemma4:e2b-mlx")
-    model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+    # model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+    model = get_model()
 
     agent = create_agent(
         model=model,

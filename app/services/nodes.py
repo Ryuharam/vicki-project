@@ -74,7 +74,7 @@ async def review_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
     if "structured_response" in result:
         logger.info("structured_output 있음")
         structured = result["structured_response"]
-        logger.info(f"확인: \n{structured}")
+
         review = parsing_response(structured)
         return {"review_result": review}
 

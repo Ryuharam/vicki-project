@@ -52,3 +52,6 @@ flowchart TD
 ├── secret
 └── uv.lock
 ```
+
+## 예시 화면
+<img width="941" height="814" alt="Image" src="https://github.com/user-attachments/assets/d9c7c74a-955d-44c1-8099-6b662d9884f0" />

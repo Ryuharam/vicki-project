@@ -1,5 +1,5 @@
 import logging
-from contextlib import asynccontextmanager
+
 from langchain_core.messages import HumanMessage
 from langgraph.runtime import Runtime
 
@@ -28,6 +28,7 @@ async def preprocess_node(state: ReviewBotState) -> dict:
     access_token = request_access_token(installation_id=installation_id)
 
     owner = payload.get("repository", {}).get("owner", {}).get("login")
+    repo_id = payload.get("repository", {}).get("id")
     repo = payload.get("repository", {}).get("name")
     pull_request = payload.get("pull_request", {})
     pull_number = pull_request.get("number")
@@ -51,6 +52,7 @@ async def preprocess_node(state: ReviewBotState) -> dict:
     return {
         "installation_id": installation_id,
         "owner": owner,
+        "repo_id": repo_id,
         "repo": repo,
         "pull_number": pull_number,
         "access_token": access_token,
@@ -102,7 +104,7 @@ def parsing_response(response: ReviewComments) -> str:
         "",
     ]
 
-    for i, comment in enumerate(response.comments, start=1):
+    for i, comment in enumerate(sorted(response.comments), start=1):
         lines.extend(
             [
                 f"### {i}. [{comment.severity}] {comment.title}",

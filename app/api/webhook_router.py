@@ -2,7 +2,7 @@ import json
 import logging
 from fastapi import APIRouter, Request, HTTPException
 
-from app.services.github_service import is_valid_github_webhook, request_access_token
+from app.services.github_service import is_valid_github_webhook
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 logger = logging.getLogger("uvicorn.error")

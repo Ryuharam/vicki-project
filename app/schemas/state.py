@@ -10,6 +10,7 @@ class ReviewBotState(TypedDict):
     installation_id: str
     access_token: str
     owner: str
+    repo_id: int
     repo: str
     pull_number: int
     pr_files: List[GitHubFileItem]

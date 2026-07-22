@@ -1,5 +1,5 @@
 # API 응답 형식 데이터 검증 (Pydantic)
-from typing import Optional, Literal
+from typing import Optional, Literal, ClassVar
 from pydantic import BaseModel, Field
 
 
@@ -26,6 +26,14 @@ class ReviewCommentItem(BaseModel):
         "medium=설계·성능·유지보수성 문제, "
         "low=컨벤션·스타일 개선 사항."
     )
+
+    _SEVERITY_ORDER: ClassVar[dict] = {"high": 1, "medium": 2, "low": 3}
+
+    def __lt__(self, other: "ReviewCommentItem") -> bool:
+        self_order = self._SEVERITY_ORDER.get(self.severity, 99)
+        other_order = self._SEVERITY_ORDER.get(other.severity, 99)
+        return self_order < other_order
+
     category: Literal["design", "convention", "performance", "bug", "security"] = Field(
         description="리뷰의 분류. 가장 적합한 하나만 선택한다."
     )

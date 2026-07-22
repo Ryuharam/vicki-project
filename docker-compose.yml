@@ -1,0 +1,23 @@
+services:
+  nginx-image:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    container_name: nginx-app
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+
+  chroma:
+    image: chromadb/chroma
+    container_name: chroma-app
+
+
+  app-image:
+    image: test-app:latest
+    ports:
+      - "8000:8000"
+    container_name: test-app
+    env_file:
+      - .env
+    volumes:
+      - ./secret/github-app.pem:${GITHUB_KEY_FILE}:ro

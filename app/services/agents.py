@@ -2,8 +2,6 @@ import os
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
-from langchain_ollama import ChatOllama
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import InMemorySaver
 
 from app.services.tools import search_convention
@@ -15,8 +13,7 @@ load_dotenv()
 
 
 def get_review_agent():
-    # model = ChatOllama(model="gemma4:e2b-mlx")
-    # model = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+
     model = get_model()
 
     agent = create_agent(

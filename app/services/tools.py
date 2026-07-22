@@ -2,7 +2,7 @@ import logging
 
 from langchain_core.tools import tool
 
-from app.repositories.retriever import search
+from app.repositories.vector_repository import similarity_search
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -18,6 +18,7 @@ def search_convention(query: str) -> str:
         result: chromadb에서 검색한 결과(string)
     """
     logger.info("[Tool] search convention")
-    docs = search(query=query)
+    docs = similarity_search(query=query)
 
+    logger.info(f"검색 결과: {len(docs)}")
     return "\n\n".join(doc.page_content for doc in docs)

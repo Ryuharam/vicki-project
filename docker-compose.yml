@@ -16,7 +16,7 @@ services:
     image: ${DOCKER_USERNAME}/vicki-app:latest
     ports:
       - "8000:8000"
-    container_name: test-app
+    container_name: vicki-app
     env_file:
       - .env
     volumes:

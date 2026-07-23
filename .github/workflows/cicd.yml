@@ -53,7 +53,7 @@ jobs:
 
       - name: Deploy to EC2 via Docker Compose
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST}} << 'EOF'
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
           
             mkdir -p /home/${{ secrets.SERVER_USER }}/secret
             cd /home/${{ secrets.SERVER_USER }}/secret

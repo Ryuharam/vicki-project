@@ -21,9 +21,16 @@ def add_documents(documents: list[Document]) -> None:
 
 def get_all_documents():
     result = vectorstore.get()
-    logger.info(f"get_all_documents : {type(result)}")
-    logger.info(f"내용물 : {result}")
-    return vectorstore.get()
+
+    if not bool(result.get("documents")):
+        return []
+
+    filenames = set()
+
+    for r in result.get("metadatas"):
+        filenames.add(r.get("filename"))
+
+    return filenames
 
 
 def similarity_search(query: str) -> list[Document]:
@@ -39,7 +46,7 @@ def similarity_search(query: str) -> list[Document]:
 def search_by_hash(repo_id: int, filehash: str) -> dict:
     """ropo_id와 hash로 문서를 조회합니다."""
 
-    return vectorstore.get(
+    result = vectorstore.get(
         where={
             "$and": [
                 {"repo_id": repo_id},
@@ -47,6 +54,8 @@ def search_by_hash(repo_id: int, filehash: str) -> dict:
             ]
         }
     )
+
+    return bool(result.get("documents"))
 
 
 def search_by_filename(repo_id: int, filename: str) -> dict:
@@ -65,11 +74,4 @@ def search_by_filename(repo_id: int, filename: str) -> dict:
 def delete_documents(repo_id: int, filename: str) -> None:
     """문서를 삭제합니다."""
 
-    vectorstore._collection.delete(
-        where={
-            "$and": [
-                {"repo_id": repo_id},
-                {"filename": filename},
-            ]
-        }
-    )
+    pass

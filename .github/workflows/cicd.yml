@@ -1,0 +1,64 @@
+name: CICD
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v6
+
+      - name: Docker Hub Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN}}
+      
+      - name: Build and Push Docker Image
+        run: |
+          docker build --platform linux/amd64 -t ${{ secrets.DOCKER_USERNAME }}/vicki-app:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/vicki-app:latest
+  
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Prepare SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy nginx.conf and docker-compose.yml
+        run: |
+          scp -i ~/.ssh/id_rsa docker-compose.yml \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/
+
+          scp -i ~/.ssh/id_rsa nginx.conf \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/
+
+      - name: Deploy to EC2 via Docker Compose
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST}} << 'EOF'
+          
+            mkdir -p /home/${{ secrets.SERVER_USER }}/secret
+            cd /home/${{ secrets.SERVER_USER }}/secret
+            echo "${{ secrets.GH_KEY_FILE }}" > github-app.pem
+
+            cd /home/${{ secrets.SERVER_USER }}
+            echo "${{ secrets.ENV_CONTENTS }}" > .env
+
+            docker compose pull
+            docker compose up -d --remove-orphans
+          EOF
+          

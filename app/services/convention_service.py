@@ -57,7 +57,9 @@ def upload_convention(content: str, filename: str, repo_id: int) -> None:
         logger.info(f"이미 존재하는 파일 : {filename}")
         return
 
-    document = create_document(content=content, filename=filename, repo_id=repo_id)
+    document = create_document(
+        content=content, filename=filename, repo_id=repo_id, filehash=filehash
+    )
 
     chunks = split_documents([document])
 

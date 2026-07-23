@@ -34,7 +34,7 @@ def generate_jwt() -> str:
     """깃허브 앱 인증을 위한 JWT를 생성합니다."""
 
     client_id = os.getenv("GITHUB_CLIENT_ID")
-    pem_file_path = os.getenv("GITHUB_KEY_FILE")
+    pem_file_path = os.getenv("GITHUB_KEY_FILE_PATH")
 
     with open(pem_file_path, "rb") as pem_file:
         signing_key = pem_file.read()

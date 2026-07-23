@@ -8,3 +8,4 @@ requirments_backup.txt
 chroma_db/
 data/
 secret/
+.pytest_cache

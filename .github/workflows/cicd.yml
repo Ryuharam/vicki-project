@@ -29,9 +29,13 @@ jobs:
   
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
 
     steps:
+      - name: Code checkout
+        uses: actions/checkout@v6
+
       - name: Prepare SSH Key
         run: |
           mkdir -p ~/.ssh

@@ -3,9 +3,11 @@ services:
     image: nginx:latest
     ports:
       - "80:80"
+      - "443:443"
     container_name: nginx-app
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - /home/ubuntu/certs:/etc/nginx/certs
 
   chroma:
     image: chromadb/chroma
@@ -14,8 +16,6 @@ services:
 
   app-image:
     image: ${DOCKER_USERNAME}/vicki-app:latest
-    ports:
-      - "8000:8000"
     container_name: vicki-app
     env_file:
       - .env

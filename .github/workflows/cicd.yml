@@ -9,7 +9,32 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Test with pytest
+        run: uv run pytest
+  
+  docker:
+    needs: test
+
+    if: github.event_name == 'push'
+
     runs-on: ubuntu-latest
 
     steps:
@@ -28,8 +53,10 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/vicki-app:latest
   
   deploy:
-    needs: build
-    if: github.event_name != 'pull_request'
+    needs: docker
+
+    if: github.event_name == 'push'
+
     runs-on: ubuntu-latest
 
     steps:
@@ -43,12 +70,34 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Copy nginx.conf and docker-compose.yml
+      - name: Create .env
+        run: |
+          cat > .env <<EOF
+          APP_ENV=prod
+          WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET }}
+          GITHUB_CLIENT_ID=${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_KEY_FILE_PATH=/run/secret/github-app.pem
+          PROVIDER=${{ secrets.PROVIDER }}
+          GOOGLE_MODEL=${{ secrets.GOOGLE_MODEL }}
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+          ANTHROPIC_MODEL=${{ secrets.ANTHROPIC_MODEL }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          OLLAMA_MODEL=${{ secrets.OLLAMA_MODEL }}
+          EMBED_MODEL=${{ secrets.EMBED_MODEL }}
+          VECTOR_DB_HOST=${{ secrets.VECTOR_DB_HOST }}
+          VECTOR_DB_PORT=${{ secrets.VECTOR_DB_PORT }}
+          DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+          EOF
+      
+      - name: Copy nginx.conf, docker-compose.yml and .env
         run: |
           scp -i ~/.ssh/id_rsa docker-compose.yml \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/
 
           scp -i ~/.ssh/id_rsa nginx.conf \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/
+
+          scp -i ~/.ssh/id_rsa .env \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/
 
       - name: Deploy to EC2 via Docker Compose
@@ -60,9 +109,8 @@ jobs:
             echo "${{ secrets.GH_KEY_FILE }}" > github-app.pem
 
             cd /home/${{ secrets.SERVER_USER }}
-            echo "${{ secrets.ENV_CONTENTS }}" > .env
 
-            sudo docker compose pull
-            sudo docker compose up -d --remove-orphans
+            docker compose pull
+            docker compose up -d --remove-orphans
           EOF
           

@@ -1,4 +1,3 @@
-import os
 import time
 import hmac
 import hashlib
@@ -8,18 +7,17 @@ from pydantic import TypeAdapter
 
 import jwt
 import httpx
-from dotenv import load_dotenv
 
+from app.core.config import settings
 from app.schemas.response import GitHubFileItem
 
-load_dotenv()
 logger = logging.getLogger("uvicorn.error")
 
 
 def is_valid_github_webhook(payload_body: bytes, signature_header: str) -> bool:
     """깃허브 웹훅 요청을 검증합니다."""
 
-    webhook_secret = os.getenv("WEBHOOK_SECRET")
+    webhook_secret = settings.WEBHOOK_SECRET
 
     hash_object = hmac.new(
         webhook_secret.encode("utf-8"), msg=payload_body, digestmod=hashlib.sha256
@@ -33,8 +31,8 @@ def is_valid_github_webhook(payload_body: bytes, signature_header: str) -> bool:
 def generate_jwt() -> str:
     """깃허브 앱 인증을 위한 JWT를 생성합니다."""
 
-    client_id = os.getenv("GITHUB_CLIENT_ID")
-    pem_file_path = os.getenv("GITHUB_KEY_FILE_PATH")
+    client_id = settings.GITHUB_CLIENT_ID
+    pem_file_path = settings.GITHUB_KEY_FILE_PATH
 
     with open(pem_file_path, "rb") as pem_file:
         signing_key = pem_file.read()

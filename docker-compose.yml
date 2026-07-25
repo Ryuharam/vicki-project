@@ -12,6 +12,8 @@ services:
   chroma:
     image: chromadb/chroma
     container_name: chroma-app
+    volumes:
+      - ./chroma-data:/data 
 
 
   app-image:

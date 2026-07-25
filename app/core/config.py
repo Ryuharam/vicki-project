@@ -1,21 +1,33 @@
-import os
-from pathlib import Path
-
-from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-CURRENT_FILE_DIR = Path(__file__).resolve().parent
-BASE_PATH = CURRENT_FILE_DIR.parent.parent
 
 
 class AppSettings(BaseSettings):
+    APP_ENV: str = "dev"
+
+    # github apps
+    WEBHOOK_SECRET: str
+    GITHUB_CLIENT_ID: str
+    GITHUB_KEY_FILE_PATH: str
+
+    # llm model
+    PROVIDER: str
+    GOOGLE_MODEL: str
+    GOOGLE_API_KEY: str
+    ANTHROPIC_MODEL: str
+    ANTHROPIC_API_KEY: str
     OLLAMA_MODEL: str
 
+    # embedding
+    EMBED_MODEL: str
+
+    # vectordb
+    VECTOR_DB_HOST: str
+    VECTOR_DB_PORT: int
+
     model_config = SettingsConfigDict(
-        env_file=BASE_PATH / ".env", env_file_encoding="utf-8", extra="ignore"
+        case_sensitive=True,
+        extra="ignore",
     )
 
 
 settings = AppSettings()
-
-print(settings.OLLAMA_MODEL)

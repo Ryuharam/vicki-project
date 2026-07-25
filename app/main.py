@@ -1,13 +1,10 @@
 from contextlib import asynccontextmanager
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
 
 from app.api import webhook_router, convention_router
 from app.services.agents import get_review_agent
 from app.services.builder import build_graph
-
-load_dotenv()
 
 
 @asynccontextmanager

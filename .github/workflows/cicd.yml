@@ -75,12 +75,13 @@ jobs:
           cat > .env <<EOF
           APP_ENV=prod
           WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET }}
-          GITHUB_CLIENT_ID=${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_ID=${{ secrets.GH_KEY_FILE }}
           GITHUB_KEY_FILE_PATH=/run/secret/github-app.pem
           LLM_PRIMARY=${{ secrets.LLM_PRIMARY }}
           LLM_FALLBACKS=${{ secrets.LLM_FALLBACKS }}
           GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          OLLAMA_MODEL=gemma4:e2b-mlx
           EMBED_MODEL=${{ secrets.EMBED_MODEL }}
           VECTOR_DB_HOST=${{ secrets.VECTOR_DB_HOST }}
           VECTOR_DB_PORT=${{ secrets.VECTOR_DB_PORT }}

@@ -1,22 +1,21 @@
-from langchain_chroma import Chroma
 import chromadb
+from langchain_chroma import Chroma
+from langchain_core.embeddings import Embeddings
 
-from app.core.embedding import get_embeddings
-from app.core.config import settings
+from app.core.config import AppSettings
 
-_host = settings.VECTOR_DB_HOST
-_port = settings.VECTOR_DB_PORT
-
-embeddings = get_embeddings()
-
-_client = chromadb.HttpClient(host=_host, port=_port)
-
-_vectorstore = Chroma(
-    client=_client, collection_name="conventions", embedding_function=embeddings
-)
+COLLECTION_NAME = "conventions"
 
 
-def get_vectorstore() -> Chroma:
-    """Chroma Vector DB를 반환합니다."""
+def build_vectorstore(settings: AppSettings, embeddings: Embeddings) -> Chroma:
+    """Chroma Vector DB에 연결합니다."""
+    client = chromadb.HttpClient(
+        host=settings.VECTOR_DB_HOST,
+        port=settings.VECTOR_DB_PORT,
+    )
 
-    return _vectorstore
+    return Chroma(
+        client=client,
+        collection_name=COLLECTION_NAME,
+        embedding_function=embeddings,
+    )

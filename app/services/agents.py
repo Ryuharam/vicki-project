@@ -1,21 +1,20 @@
+from typing import Sequence
+
 from langchain.agents import create_agent
+from langchain_core.language_models import BaseChatModel
+from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import InMemorySaver
 
-from app.services.tools import search_convention
-from app.services.prompts import SYSTEM_PROMPT
 from app.schemas.response import ReviewComments
-from app.core.llm import get_model
+from app.services.prompts import SYSTEM_PROMPT
 
 
-def get_review_agent():
-
-    model = get_model()
-
-    agent = create_agent(
+def build_review_agent(model: BaseChatModel, tools: Sequence[BaseTool]):
+    """리뷰 agent를 조립합니다. 모델과 tool은 주입받습니다."""
+    return create_agent(
         model=model,
-        tools=[search_convention],
+        tools=list(tools),
         checkpointer=InMemorySaver(),
         system_prompt=SYSTEM_PROMPT,
         response_format=ReviewComments,
     )
-    return agent

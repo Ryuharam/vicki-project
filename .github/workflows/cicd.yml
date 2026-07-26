@@ -112,7 +112,7 @@ jobs:
             mkdir -p /home/${{ secrets.SERVER_USER }}/certs
             cd /home/${{ secrets.SERVER_USER }}/certs
             echo "${{ secrets.CLOUDFLARE_ORIGIN_KEY }}" > origin.pem
-            echo "${{ secrets.CLOUDFLARE_PRIVATE_KEY }}" > private.pem
+            echo "${{ secrets.CLOUDFLARE_PRIVATE_KEY }}" > private.key
 
             cd /home/${{ secrets.SERVER_USER }}
 

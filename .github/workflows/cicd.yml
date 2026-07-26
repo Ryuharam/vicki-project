@@ -108,6 +108,11 @@ jobs:
             cd /home/${{ secrets.SERVER_USER }}/secret
             echo "${{ secrets.GH_KEY_FILE }}" > github-app.pem
 
+            mkdir -p /home/${{ secrets.SERVER_USER }}/certs
+            cd /home/${{ secrets.SERVER_USER }}/certs
+            echo "${{ secrets.CLOUDFLARE_ORIGIN_KEY }}" > origin.pem
+            echo "${{ secrets.CLOUDFLARE_PRIVATE_KEY}}" > private.pem
+
             cd /home/${{ secrets.SERVER_USER }}
 
             docker compose pull

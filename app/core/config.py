@@ -1,4 +1,7 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Annotated
+
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
 
 
 class AppSettings(BaseSettings):
@@ -10,12 +13,11 @@ class AppSettings(BaseSettings):
     GITHUB_KEY_FILE_PATH: str
 
     # llm model
-    PROVIDER: str
-    GOOGLE_MODEL: str
-    GOOGLE_API_KEY: str
-    ANTHROPIC_MODEL: str
-    ANTHROPIC_API_KEY: str
-    OLLAMA_MODEL: str
+    LLM_PRIMARY: str
+    LLM_FALLBACKS: Annotated[list[str], NoDecode] = []
+
+    GOOGLE_API_KEY: str | None = None
+    ANTHROPIC_API_KEY: str | None = None
 
     # embedding
     EMBED_MODEL: str
@@ -25,9 +27,14 @@ class AppSettings(BaseSettings):
     VECTOR_DB_PORT: int
 
     model_config = SettingsConfigDict(
+        env_file=".env",
         case_sensitive=True,
         extra="ignore",
     )
 
-
-settings = AppSettings()
+    @field_validator("LLM_FALLBACKS", mode="before")
+    @classmethod
+    def _split_comma_separated(cls, value):
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        return value

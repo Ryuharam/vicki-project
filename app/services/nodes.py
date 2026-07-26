@@ -4,19 +4,18 @@ from langchain_core.messages import HumanMessage
 from langgraph.runtime import Runtime
 
 from app.schemas.response import ReviewComments
-from app.schemas.state import ReviewBotState, ReviewBotContext
-from app.services.github_service import (
-    request_access_token,
-    get_pr_files,
-    post_pr_comment,
-)
+from app.schemas.state import ReviewBotContext, ReviewBotState
 
 logger = logging.getLogger("uvicorn.error")
 
 
-async def preprocess_node(state: ReviewBotState) -> dict:
+async def preprocess_node(
+    state: ReviewBotState, runtime: Runtime[ReviewBotContext]
+) -> dict:
     """GitHub API를 호출하여 토큰을 발급받고 변경된 파일(Diff) 목록을 가져와 상태를 업데이트하는 전처리 노드"""
     logger.info("[START] 전처리 노드 시작")
+
+    github = runtime.context["github"]
 
     payload = state["payload"]
     installation = payload.get("installation")
@@ -25,7 +24,7 @@ async def preprocess_node(state: ReviewBotState) -> dict:
         return {}
 
     installation_id = installation.get("id")
-    access_token = request_access_token(installation_id=installation_id)
+    access_token = github.request_access_token(installation_id=installation_id)
 
     owner = payload.get("repository", {}).get("owner", {}).get("login")
     repo_id = payload.get("repository", {}).get("id")
@@ -35,7 +34,7 @@ async def preprocess_node(state: ReviewBotState) -> dict:
     pr_title = pull_request.get("title")
     pr_body = pull_request.get("body")
 
-    validated_files = await get_pr_files(
+    validated_files = await github.get_pr_files(
         owner=owner, repo=repo, pull_number=pull_number, token=access_token
     )
 
@@ -68,7 +67,14 @@ async def review_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
     logger.info("[START] review node start")
     review_agent = runtime.context["review_agent"]
 
-    result = await review_agent.ainvoke({"messages": state["messages"]})
+    # agent에 checkpointer가 붙어 있어 thread_id가 없으면 ValueError가 납니다.
+    # PR 하나를 하나의 대화로 봅니다.
+    thread_id = f"{state['repo_id']}:{state['pull_number']}"
+
+    result = await review_agent.ainvoke(
+        {"messages": state["messages"]},
+        config={"configurable": {"thread_id": thread_id}},
+    )
 
     logger.info(f"result key 확인 : {result.keys()}")
 
@@ -118,15 +124,16 @@ def parsing_response(response: ReviewComments) -> str:
     return "\n".join(lines)
 
 
-async def comment_node(state: ReviewBotState):
+async def comment_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]):
     """최종 PR comment를 게시합니다."""
-    logger.info("[START ] comment node start")
+    logger.info("[START] comment node start")
 
+    github = runtime.context["github"]
     review = state["review_result"]
 
     logger.info(f"review: \n{review}")
 
-    await post_pr_comment(
+    await github.post_pr_comment(
         owner=state["owner"],
         repo=state["repo"],
         pull_number=state["pull_number"],

@@ -2,15 +2,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api import webhook_router, convention_router
-from app.services.agents import get_review_agent
-from app.services.builder import build_graph
+from app.api import convention_router, webhook_router
+from app.core.container import build_container
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.review_agent = get_review_agent()
-    app.state.graph = build_graph()
+    app.state.container = build_container()
     yield
 
 

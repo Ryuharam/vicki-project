@@ -4,7 +4,7 @@ import logging
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from app.repositories.vector_repository import add_documents, search_by_hash
+from app.repositories.vector_repository import ConventionRepository
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -20,12 +20,6 @@ def calculate_hash(content: str) -> str:
     """문서 내용의 SHA256 해시를 계산합니다."""
 
     return hashlib.sha256(content.encode()).hexdigest()
-
-
-def is_dupicate(repo_id: int, filehash: str) -> bool:
-    """이미 동일한 문서가 존재하는지 확인합니다."""
-
-    return bool(search_by_hash(repo_id, filehash))
 
 
 def create_document(
@@ -48,12 +42,14 @@ def split_documents(documents: list[Document]) -> list[Document]:
     return chunks
 
 
-def upload_convention(content: str, filename: str, repo_id: int) -> None:
+def upload_convention(
+    repository: ConventionRepository, content: str, filename: str, repo_id: int
+) -> None:
     """컨벤션 문서를 저장합니다."""
 
     filehash = calculate_hash(content=content)
 
-    if is_dupicate(repo_id=repo_id, filehash=filehash):
+    if repository.exists_by_hash(repo_id=repo_id, filehash=filehash):
         logger.info(f"이미 존재하는 파일 : {filename}")
         return
 
@@ -63,6 +59,6 @@ def upload_convention(content: str, filename: str, repo_id: int) -> None:
 
     chunks = split_documents([document])
 
-    add_documents(chunks)
+    repository.add_documents(chunks)
 
     logger.info("문서 저장 완료")

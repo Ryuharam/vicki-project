@@ -1,15 +1,16 @@
 import json
 import logging
-from fastapi import APIRouter, Request, HTTPException
 
-from app.services.github_service import is_valid_github_webhook
+from fastapi import APIRouter, HTTPException, Request
+
+from app.api.deps import ContainerDep
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 logger = logging.getLogger("uvicorn.error")
 
 
 @router.post("")
-async def github_webhook(request: Request):
+async def github_webhook(request: Request, container: ContainerDep):
     """
     GitHub Pull Request 웹훅 이벤트를 처리하는 핸들러
 
@@ -38,7 +39,7 @@ async def github_webhook(request: Request):
             status_code=403, detail="x-hub-signature-256 header is missing!"
         )
 
-    if not is_valid_github_webhook(payload_body, signature_header):
+    if not container.github.is_valid_webhook(payload_body, signature_header):
         logger.error("검증 실패")
         raise HTTPException(status_code=403, detail="Request signatures didn't match!")
 
@@ -52,11 +53,12 @@ async def github_webhook(request: Request):
     if action in ["opened", "synchronize"]:
         logger.info(f"PR - action : {action}")
 
-        graph = request.app.state.graph
-
-        await graph.ainvoke(
+        await container.graph.ainvoke(
             {"payload": payload},
-            context={"review_agent": request.app.state.review_agent},
+            context={
+                "review_agent": container.review_agent,
+                "github": container.github,
+            },
         )
 
     elif action == "closed":

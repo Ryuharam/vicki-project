@@ -75,7 +75,7 @@ jobs:
           cat > .env <<EOF
           APP_ENV=prod
           WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET }}
-          GITHUB_CLIENT_ID=${{ secrets.GH_KEY_FILE }}
+          GITHUB_CLIENT_ID=${{ secrets.GH_CLIENT_ID }}
           GITHUB_KEY_FILE_PATH=/run/secret/github-app.pem
           LLM_PRIMARY=${{ secrets.LLM_PRIMARY }}
           LLM_FALLBACKS=${{ secrets.LLM_FALLBACKS }}

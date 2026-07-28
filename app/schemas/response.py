@@ -58,3 +58,9 @@ class ReviewComments(BaseModel):
         description="발견한 리뷰 목록이다. "
         "중복된 리뷰는 하나로 합치고, 중요도가 높은 순서대로 정렬한다."
     )
+    verdict: Literal["APPROVE", "REQUEST_CHANGES", "COMMENT"] = Field(
+        description="리뷰 결과의 분류. 가장 적합한 하나만 선택한다. "
+        "REQUEST_CHANGES : severity가 high가 있는 경우, 꼭 고쳐야 할 코드가 있는 경우, "
+        "APPROVE : severity에 high가 없고 크게 고쳐야 할 코드가 없는 경우, "
+        "COMMENT : severity에 high가 없고 사소하게 고쳐야 할 코드가 있는 경우"
+    )

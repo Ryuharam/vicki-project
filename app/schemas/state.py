@@ -1,5 +1,5 @@
 # LangGraph의 State 정의
-from typing import TypedDict, List, Annotated, Any
+from typing import TypedDict, List, Annotated, Any, Literal
 from langgraph.graph.message import add_messages
 
 from app.schemas.response import GitHubFileItem
@@ -18,6 +18,8 @@ class ReviewBotState(TypedDict):
     pr_title: str
     pr_body: str
     review_result: str
+    diff_summary: str
+    verdict: Literal["APPROVE", "REQUEST_CHANGES", "COMMENT"]
 
 
 class ReviewBotContext(TypedDict):

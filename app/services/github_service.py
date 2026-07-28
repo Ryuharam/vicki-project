@@ -88,19 +88,20 @@ class GitHubClient:
             adapter = TypeAdapter(List[GitHubFileItem])
             return adapter.validate_python(response.json())
 
-    async def post_pr_comment(
-        self, owner: str, repo: str, pull_number: int, token: str, body: str
+    async def create_review(
+        self, owner: str, repo: str, pull_number: int, token: str, event: str, body: str
     ) -> None:
-        """생성해 낸 최종 Comment를 게시합니다."""
-        logger.info("Post Comment")
+        """event에 따라 다른 로직 수행.
+        event: APPROVE, REQUEST_CHANGES, COMMENT"""
+        logger.info("Create review")
 
-        if body is None:
-            logger.warning("Comment body is empty. Skip posting comment.")
-            return
-
-        url = f"https://api.github.com/repos/{owner}/{repo}/issues/{pull_number}/comments"
+        url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
         headers = get_github_headers(token=token)
 
+        logger.info(f"리뷰 작성 요청 전송 : event - {event}")
+
         async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers, json={"body": body})
+            response = await client.post(
+                url=url, headers=headers, json={"body": body, "event": event}
+            )
             response.raise_for_status()

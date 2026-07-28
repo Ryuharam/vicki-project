@@ -59,6 +59,7 @@ async def preprocess_node(
         "messages": [initial_messages],
         "pr_title": pr_title,
         "pr_body": pr_body,
+        "diff_summary": diff_summary,
     }
 
 
@@ -67,7 +68,6 @@ async def review_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
     logger.info("[START] review node start")
     review_agent = runtime.context["review_agent"]
 
-    # agent에 checkpointer가 붙어 있어 thread_id가 없으면 ValueError가 납니다.
     # PR 하나를 하나의 대화로 봅니다.
     thread_id = f"{state['repo_id']}:{state['pull_number']}"
 
@@ -84,12 +84,13 @@ async def review_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
         structured = result["structured_response"]
 
         review = parsing_response(structured)
-        return {"review_result": review}
+
+        return {"review_result": review, "verdict": structured.verdict}
 
     # 없으면 평문 그대로 반환
     last_message = result["messages"][-1].content
 
-    return {"review_result": last_message}
+    return {"review_result": last_message, "verdict": "COMMENT"}
 
 
 def parsing_response(response: ReviewComments) -> str:
@@ -133,12 +134,28 @@ async def comment_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]
 
     logger.info(f"review: \n{review}")
 
+    await github.create_review(
+        owner=state["owner"],
+        repo=state["repo"],
+        pull_number=state["pull_number"],
+        token=state["access_token"],
+        event=state["verdict"],
+        body=state["review_result"],
+    )
+
+    return {}
+
+
+async def reject_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]):
+    """리뷰를 거절합니다."""
+    logger.info("[START] reject review")
+
+    github = runtime.context["github"]
+
     await github.post_pr_comment(
         owner=state["owner"],
         repo=state["repo"],
         pull_number=state["pull_number"],
         token=state["access_token"],
-        body=state["review_result"],
+        body="리뷰를 거절합니다.",  # TODO : 좀더 명확하게 수정 ex. 거절 이유
     )
-
-    return {}

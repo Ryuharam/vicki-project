@@ -9,6 +9,9 @@ GitHub 에서 사용자가 Pull Request를 열었을 때 코드 리뷰 후 comme
 5. PR comment 등록
 
 ## 구조도
+### 시스템 아키텍처
+<img width="459" height="435" alt="Image" src="https://github.com/user-attachments/assets/73ae106f-3aaa-4f21-b883-aba0178ac094" />
+
 
 ### 1. 전체 흐름
 개발자가 PR을 올리면 봇이 리뷰 코멘트를 달기까지의 과정입니다.

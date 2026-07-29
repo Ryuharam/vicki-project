@@ -152,10 +152,11 @@ async def reject_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
 
     github = runtime.context["github"]
 
-    await github.post_pr_comment(
+    await github.create_review(
         owner=state["owner"],
         repo=state["repo"],
         pull_number=state["pull_number"],
         token=state["access_token"],
+        event="REQUEST_CHANGES"
         body="리뷰를 거절합니다.",  # TODO : 좀더 명확하게 수정 ex. 거절 이유
     )

@@ -64,3 +64,13 @@ class ReviewComments(BaseModel):
         "APPROVE : severity에 high가 없고 크게 고쳐야 할 코드가 없는 경우, "
         "COMMENT : severity에 high가 없고 사소하게 고쳐야 할 코드가 있는 경우"
     )
+
+
+class QuestionComment(BaseModel):
+    """사용자의 질문에 대한 답변"""
+
+    summary: str = Field(description="답변을 한 문장으로 요약")
+
+    answer: str = Field(description="사용자에게 보여줄 최종 답변")
+
+    related: bool = Field(description="질문이 PR 리뷰와 관련있는지 여부")

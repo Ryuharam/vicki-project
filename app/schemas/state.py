@@ -10,8 +10,8 @@ class ReviewBotState(TypedDict):
     installation_id: str
     access_token: str
     owner: str
-    repo_id: int
     repo: str
+    repo_id: int
     pull_number: int
     pr_files: List[GitHubFileItem]
     messages: Annotated[list, add_messages]
@@ -23,7 +23,22 @@ class ReviewBotState(TypedDict):
 
 
 class ReviewBotContext(TypedDict):
-    """그래프 실행에 주입되는 의존성. 요청마다 container에서 채웁니다."""
-
     review_agent: Any
+    github: Any
+
+
+class QuestionBotState(TypedDict):
+    payload: dict
+    installation_id: str
+    access_token: str
+    owner: str
+    repo: str
+    repo_id: int
+    pull_number: int
+    comment: str
+    answer: str
+
+
+class QuestionBotContext(TypedDict):
+    question_agent: Any
     github: Any

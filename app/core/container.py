@@ -10,8 +10,8 @@ from app.core.embedding import build_embeddings
 from app.core.llm import build_llm_chain
 from app.core.vectordb import build_vectorstore
 from app.repositories.vector_repository import ConventionRepository
-from app.services.agents import build_review_agent
-from app.services.builder import build_graph
+from app.services.agents import build_review_agent, build_question_agent
+from app.services.builder import build_graph, build_question_graph
 from app.services.github_service import GitHubClient
 from app.services.tools import make_search_convention
 
@@ -28,7 +28,9 @@ class Container:
     repository: ConventionRepository
     github: GitHubClient
     review_agent: Any
+    question_agent: Any
     graph: Any
+    question_graph: Any
 
 
 def build_container(settings: AppSettings | None = None) -> Container:
@@ -51,6 +53,8 @@ def build_container(settings: AppSettings | None = None) -> Container:
         tools=[make_search_convention(repository)],
     )
 
+    question_agent = build_question_agent(model=llm)
+
     logger.info("[container] 조립 완료")
 
     return Container(
@@ -60,5 +64,7 @@ def build_container(settings: AppSettings | None = None) -> Container:
         repository=repository,
         github=github,
         review_agent=review_agent,
+        question_agent=question_agent,
         graph=build_graph(),
+        question_graph=build_question_graph(),
     )

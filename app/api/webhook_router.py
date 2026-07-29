@@ -43,28 +43,47 @@ async def github_webhook(request: Request, container: ContainerDep):
         logger.error("검증 실패")
         raise HTTPException(status_code=403, detail="Request signatures didn't match!")
 
-    payload = json.loads(payload_body)
+    event_header = request.headers.get("X-Github-Event")
+    logger.info(f"event: {event_header}")
 
+    payload = json.loads(payload_body)
     action = payload.get("action")
+
     if not action:
         logger.info("This event doesn't have an action field")
         return {}
 
-    if action in ["opened", "synchronize"]:
-        logger.info(f"PR - action : {action}")
+    if event_header == "pull_request":
+        if action in ["opened", "synchronize"]:
+            logger.info(f"PR - action : {action}")
 
-        await container.graph.ainvoke(
-            {"payload": payload},
-            context={
-                "review_agent": container.review_agent,
-                "github": container.github,
-            },
-        )
+            await container.graph.ainvoke(
+                {"payload": payload},
+                context={
+                    "review_agent": container.review_agent,
+                    "github": container.github,
+                },
+            )
 
-    elif action == "closed":
-        logger.info("PR closed")
-        if payload.get("pull_request", {}).get("merged"):
-            logger.info("PR merged")
+        elif action == "closed":
+            logger.info("PR closed")
+            if payload.get("pull_request", {}).get("merged"):
+                logger.info("PR merged")
+            else:
+                logger.info("PR not merged")
+    elif event_header == "issue_comment":
+        if action == "created":
+            if payload.get("comment", {}).get("user", {}).get("type") == "Bot":
+                logger.info("Bot의 comment 등록됨")
+                return {}
+
+            await container.question_graph.ainvoke(
+                {"payload": payload},
+                context={
+                    "question_agent": container.question_agent,
+                    "github": container.github,
+                },
+            )
         else:
-            logger.info("PR not merged")
+            print(action)
     return {}

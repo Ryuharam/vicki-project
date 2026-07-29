@@ -93,15 +93,47 @@ class GitHubClient:
     ) -> None:
         """event에 따라 다른 로직 수행.
         event: APPROVE, REQUEST_CHANGES, COMMENT"""
-        logger.info("Create review")
+        logger.info("Create comment")
 
         url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
         headers = get_github_headers(token=token)
-
-        logger.info(f"리뷰 작성 요청 전송 : event - {event}")
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url=url, headers=headers, json={"body": body, "event": event}
             )
             response.raise_for_status()
+
+    async def create_comment(
+        self, owner: str, repo: str, pull_number: int, token: str, event: str, body: str
+    ) -> None:
+        """event에 따라 다른 로직 수행.
+        event: APPROVE, REQUEST_CHANGES, COMMENT"""
+        logger.info("Create comment")
+
+        url = (
+            f"https://api.github.com/repos/{owner}/{repo}/issues/{pull_number}/comments"
+        )
+        headers = get_github_headers(token=token)
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                url=url, headers=headers, json={"body": body, "event": event}
+            )
+            response.raise_for_status()
+
+    async def get_reviews(
+        self, owner: str, repo: str, pull_number: int, token: str
+    ) -> str:
+        """bot이 쓴 review 조회"""
+        logger.info("Review 조회")
+
+        url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
+        header = get_github_headers(token=token)
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url=url, headers=header)
+
+            result = response.json()[-1]
+
+            return result.get("body")

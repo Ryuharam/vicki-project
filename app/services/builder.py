@@ -1,7 +1,20 @@
 from langgraph.graph import StateGraph, START, END
 
-from app.schemas.state import ReviewBotState, ReviewBotContext
-from app.services.nodes import preprocess_node, comment_node, review_node, reject_node
+from app.schemas.state import (
+    ReviewBotState,
+    ReviewBotContext,
+    QuestionBotState,
+    QuestionBotContext,
+)
+from app.services.nodes import (
+    preprocess_node,
+    comment_node,
+    review_node,
+    reject_node,
+    answer_node,
+    post_answer_node,
+    question_preprocess_node,
+)
 from app.services.edges import route_review
 
 
@@ -19,5 +32,22 @@ def build_graph():
     )
     builder.add_edge("review", "comment")
     builder.add_edge("comment", END)
+
+    return builder.compile()
+
+
+def build_question_graph():
+    builder = StateGraph(
+        state_schema=QuestionBotState, context_schema=QuestionBotContext
+    )
+
+    builder.add_node("preprocess", question_preprocess_node)
+    builder.add_node("answer", answer_node)
+    builder.add_node("post", post_answer_node)
+
+    builder.add_edge(START, "preprocess")
+    builder.add_edge("preprocess", "answer")
+    builder.add_edge("answer", "post")
+    builder.add_edge("post", END)
 
     return builder.compile()

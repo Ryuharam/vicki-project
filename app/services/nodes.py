@@ -4,7 +4,12 @@ from langchain_core.messages import HumanMessage
 from langgraph.runtime import Runtime
 
 from app.schemas.response import ReviewComments
-from app.schemas.state import ReviewBotContext, ReviewBotState
+from app.schemas.state import (
+    ReviewBotContext,
+    ReviewBotState,
+    QuestionBotState,
+    QuestionBotContext,
+)
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -27,8 +32,8 @@ async def preprocess_node(
     access_token = github.request_access_token(installation_id=installation_id)
 
     owner = payload.get("repository", {}).get("owner", {}).get("login")
-    repo_id = payload.get("repository", {}).get("id")
     repo = payload.get("repository", {}).get("name")
+    repo_id = payload.get("repository", {}).get("id")
     pull_request = payload.get("pull_request", {})
     pull_number = pull_request.get("number")
     pr_title = pull_request.get("title")
@@ -51,8 +56,8 @@ async def preprocess_node(
     return {
         "installation_id": installation_id,
         "owner": owner,
-        "repo_id": repo_id,
         "repo": repo,
+        "repo_id": repo_id,
         "pull_number": pull_number,
         "access_token": access_token,
         "pr_files": validated_files,
@@ -68,26 +73,22 @@ async def review_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
     logger.info("[START] review node start")
     review_agent = runtime.context["review_agent"]
 
-    # PR 하나를 하나의 대화로 봅니다.
-    thread_id = f"{state['repo_id']}:{state['pull_number']}"
+    result = await review_agent.ainvoke({"messages": state["messages"]})
 
-    result = await review_agent.ainvoke(
-        {"messages": state["messages"]},
-        config={"configurable": {"thread_id": thread_id}},
-    )
-
-    logger.info(f"result key 확인 : {result.keys()}")
-
-    # structured output이 있으면 파싱 후 최종 리뷰 완성
     if "structured_response" in result:
         logger.info("structured_output 있음")
+
         structured = result["structured_response"]
+
+        if structured.verdict == "REQUEST_CHANGES":
+            structured.summary += (
+                "\n\n⚠️ severity가 high인 부분은 꼭 수정하시기 바랍니다!"
+            )
 
         review = parsing_response(structured)
 
         return {"review_result": review, "verdict": structured.verdict}
 
-    # 없으면 평문 그대로 반환
     last_message = result["messages"][-1].content
 
     return {"review_result": last_message, "verdict": "COMMENT"}
@@ -130,9 +131,6 @@ async def comment_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]
     logger.info("[START] comment node start")
 
     github = runtime.context["github"]
-    review = state["review_result"]
-
-    logger.info(f"review: \n{review}")
 
     await github.create_review(
         owner=state["owner"],
@@ -152,11 +150,93 @@ async def reject_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
 
     github = runtime.context["github"]
 
-    await github.create_review(
+    await github.create_comment(
         owner=state["owner"],
         repo=state["repo"],
         pull_number=state["pull_number"],
         token=state["access_token"],
         event="REQUEST_CHANGES",
         body="리뷰를 거절합니다.",  # TODO : 좀더 명확하게 수정 ex. 거절 이유
+    )
+
+
+async def question_preprocess_node(
+    state: QuestionBotState, runtime: Runtime[QuestionBotContext]
+):
+    logger.info("[START] 질문 전처리 시작")
+
+    github = runtime.context["github"]
+
+    payload = state["payload"]
+    installation_id = payload.get("installation", {}).get("id")
+    access_token = github.request_access_token(installation_id=installation_id)
+
+    repository = payload.get("repository")
+    owner = repository.get("owner", {}).get("login")
+    repo = repository.get("name")
+    repo_id = repository.get("id")
+
+    issue = payload.get("issue")
+    pull_number = issue.get("number")
+    comment = payload.get("comment", {}).get("body")
+
+    return {
+        "installation_id": installation_id,
+        "access_token": access_token,
+        "owner": owner,
+        "repo": repo,
+        "repo_id": repo_id,
+        "pull_number": pull_number,
+        "comment": comment,
+    }
+
+
+async def answer_node(state: QuestionBotState, runtime: Runtime[QuestionBotContext]):
+    """사용자 질문에 답합니다."""
+    logger.info("[START] answer node start")
+    question_agent = runtime.context["question_agent"]
+
+    thread_id = f"{state["repo_id"]}:{state["pull_number"]}"
+
+    github = runtime.context["github"]
+    review = await github.get_reviews(
+        owner=state["owner"],
+        repo=state["repo"],
+        pull_number=state["pull_number"],
+        token=state["access_token"],
+    )
+
+    initial_message = HumanMessage(
+        content=f"PR 리뷰 내용:\n\n{review}\n\n사용자 질문: {state["comment"]}"
+    )
+
+    result = await question_agent.ainvoke(
+        {"messages": [initial_message]},
+        config={"configurable": {"thread_id": thread_id}},
+    )
+
+    structured = result.get("structured_response")
+
+    answer = (
+        f"## Summary\n\n {structured.summary}\n\n ## Answer\n\n {structured.answer}\n\n"
+    )
+
+    return {"answer": answer}
+
+
+async def post_answer_node(
+    state: QuestionBotState, runtime: Runtime[QuestionBotContext]
+):
+    """사용자 질문에 대한 답을 게시합니다."""
+    logger.info("[START] answer node")
+
+    github = runtime.context["github"]
+
+    await github.create_comment(
+        owner=state["owner"],
+        repo=state["repo"],
+        pull_number=state["pull_number"],
+        token=state["access_token"],
+        event="COMMENT",
+        body=state["answer"],
     )

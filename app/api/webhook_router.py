@@ -62,6 +62,7 @@ async def github_webhook(request: Request, container: ContainerDep):
                 context={
                     "review_agent": container.review_agent,
                     "github": container.github,
+                    "lite_llm": container.lite_llm,
                 },
             )
 

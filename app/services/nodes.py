@@ -1,15 +1,16 @@
 import logging
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.runtime import Runtime
 
-from app.schemas.response import ReviewComments
+from app.schemas.response import ReviewComments, ReviewRouterItem
 from app.schemas.state import (
     ReviewBotContext,
     ReviewBotState,
     QuestionBotState,
     QuestionBotContext,
 )
+from app.services.prompts import REVIEW_DECISION_PROMPT
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -144,19 +145,38 @@ async def comment_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]
     return {}
 
 
-async def reject_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]):
+async def router_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]):
+    logger.info("[START] router node 시작")
+    llm = runtime.context["lite_llm"]
+
+    structured_llm = llm.with_structured_output(ReviewRouterItem)
+
+    system = SystemMessage(content=REVIEW_DECISION_PROMPT)
+    human = HumanMessage(content=f"PR 내용 :\n\n{state["diff_summary"]}")
+
+    result = await structured_llm.ainvoke([system, human])
+
+    logger.info(f"리뷰가 필요하다고 생각한 근거는?\n{result.reason}")
+
+    return {
+        "review_decision": result.review_decision,
+        "reject_reason": result.skip_reason,
+    }
+
+
+async def post_reject_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]):
     """리뷰를 거절합니다."""
-    logger.info("[START] reject review")
+    logger.info("[START] Post reject review")
 
     github = runtime.context["github"]
 
-    await github.create_comment(
+    await github.create_review(
         owner=state["owner"],
         repo=state["repo"],
         pull_number=state["pull_number"],
         token=state["access_token"],
         event="REQUEST_CHANGES",
-        body="리뷰를 거절합니다.",  # TODO : 좀더 명확하게 수정 ex. 거절 이유
+        body=state["reject_reason"],
     )
 
 

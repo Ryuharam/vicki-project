@@ -16,6 +16,14 @@ class GitHubFileItem(BaseModel):
     raw_url: str
 
 
+class ReviewRouterItem(BaseModel):
+    """리뷰 필요 유무 판단과 그 이유"""
+
+    review_decision: Literal["REVIEW", "SKIP"] = Field(description="리뷰")
+    reason: str = Field(description="리뷰가 필요하다고 판단한 근거")
+    skip_reason: str = Field(description="리뷰를 skip 했다면, skip으로 결정한 이유")
+
+
 class ReviewCommentItem(BaseModel):
     title: str = Field(
         description="한 줄로 요약한 리뷰 제목. 예: '네이밍 규칙 위반', 'SRP 위반', '파일 리소스 관리'"

@@ -66,3 +66,10 @@ def build_llm_chain(settings: AppSettings) -> BaseChatModel:
 
     logger.info(f"[llm] fallbacks: {settings.LLM_FALLBACKS}")
     return primary.with_fallbacks(fallbacks, exceptions_to_handle=handled)
+
+
+def build_lite_llm(settings: AppSettings) -> BaseChatModel:
+    """공개 가중치 모델을 생성합니다."""
+    spec = settings.LITE_MODEL
+
+    return init_chat_model(spec, temperature=0, model_kwargs={"format": "json"})

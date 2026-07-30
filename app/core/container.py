@@ -7,7 +7,7 @@ from langchain_core.language_models import BaseChatModel
 
 from app.core.config import AppSettings
 from app.core.embedding import build_embeddings
-from app.core.llm import build_llm_chain
+from app.core.llm import build_llm_chain, build_lite_llm
 from app.core.vectordb import build_vectorstore
 from app.repositories.vector_repository import ConventionRepository
 from app.services.agents import build_review_agent, build_question_agent
@@ -24,6 +24,7 @@ class Container:
 
     settings: AppSettings
     llm: BaseChatModel
+    lite_llm: BaseChatModel
     vectorstore: Chroma
     repository: ConventionRepository
     github: GitHubClient
@@ -42,6 +43,7 @@ def build_container(settings: AppSettings | None = None) -> Container:
     logger.info(f"[container] env={settings.APP_ENV} llm={settings.LLM_PRIMARY}")
 
     llm = build_llm_chain(settings)
+    lite_llm = build_lite_llm(settings)
     embeddings = build_embeddings(settings)
     vectorstore = build_vectorstore(settings, embeddings)
 
@@ -60,6 +62,7 @@ def build_container(settings: AppSettings | None = None) -> Container:
     return Container(
         settings=settings,
         llm=llm,
+        lite_llm=lite_llm,
         vectorstore=vectorstore,
         repository=repository,
         github=github,

@@ -14,6 +14,8 @@ class ReviewBotState(TypedDict):
     repo_id: int
     pull_number: int
     pr_files: List[GitHubFileItem]
+    review_decision: Literal["REVIEW", "SKIP"]
+    reject_reason: str
     messages: Annotated[list, add_messages]
     pr_title: str
     pr_body: str
@@ -25,6 +27,7 @@ class ReviewBotState(TypedDict):
 class ReviewBotContext(TypedDict):
     review_agent: Any
     github: Any
+    lite_llm: Any
 
 
 class QuestionBotState(TypedDict):

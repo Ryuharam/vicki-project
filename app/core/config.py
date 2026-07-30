@@ -15,6 +15,7 @@ class AppSettings(BaseSettings):
     # llm model
     LLM_PRIMARY: str
     LLM_FALLBACKS: Annotated[list[str], NoDecode] = []
+    LITE_MODEL: str
 
     GOOGLE_API_KEY: str | None = None
     ANTHROPIC_API_KEY: str | None = None

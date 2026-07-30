@@ -10,7 +10,8 @@ from app.services.nodes import (
     preprocess_node,
     comment_node,
     review_node,
-    reject_node,
+    post_reject_node,
+    router_node,
     answer_node,
     post_answer_node,
     question_preprocess_node,
@@ -24,11 +25,13 @@ def build_graph():
     builder.add_node("preprocess", preprocess_node)
     builder.add_node("review", review_node)
     builder.add_node("comment", comment_node)
-    builder.add_node("reject", reject_node)
+    builder.add_node("reject", post_reject_node)
+    builder.add_node("router", router_node)
 
     builder.add_edge(START, "preprocess")
+    builder.add_edge("preprocess", "router")
     builder.add_conditional_edges(
-        "preprocess", route_review, {"reject": "reject", "review": "review"}
+        "router", route_review, {"SKIP": "reject", "REVIEW": "review"}
     )
     builder.add_edge("review", "comment")
     builder.add_edge("comment", END)

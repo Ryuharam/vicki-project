@@ -16,6 +16,7 @@ colab A100에서 진행하였고, 로컬에서 FastAPI를 통해 벤치마크 �
 (코랩 링크)[https://colab.research.google.com/drive/1JDpAe-oT-psChXpQmOQlhl5HzC63WGHi?usp=sharing]
 
 ### 3. 결과 비교
+<img width="618" height="703" alt="Image" src="https://github.com/user-attachments/assets/2ebe5aca-9395-419b-82aa-554d9a3722d1" />
 
 | 컬럼 | 단위 | 의미 |
 |-----|-----|-----|

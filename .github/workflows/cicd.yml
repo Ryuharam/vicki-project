@@ -130,7 +130,7 @@ jobs:
 
             for i in $(seq 1 30); do
               if docker compose exec -T postgresql \
-                   sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > /dev/null 2>&1; then
+                   sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > /dev/null 2>&1 < /dev/null; then
                 break
               fi
               echo "[DDL] postgres 준비 대기 중... ($i/30)"
@@ -144,5 +144,15 @@ jobs:
             done
 
             docker compose up -d --remove-orphans
+
+            sleep 10
+            docker compose ps
+            for s in app-image nginx-image postgresql; do
+              if [ -z "$(docker compose ps -q --status running "$s")" ]; then
+                echo "[DEPLOY] $s 가 running 상태가 아닙니다"
+                docker compose logs --tail=50 "$s"
+                exit 1
+              fi
+            done
           EOF
           

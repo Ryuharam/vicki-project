@@ -20,12 +20,12 @@ class AppSettings(BaseSettings):
     GOOGLE_API_KEY: str | None = None
     ANTHROPIC_API_KEY: str | None = None
 
-    # embedding
-    EMBED_MODEL: str
-
-    # vectordb
-    VECTOR_DB_HOST: str
-    VECTOR_DB_PORT: int
+    # rdb
+    RDB_HOST: str
+    RDB_PORT: int
+    RDB_USER: str
+    RDB_PASSWORD: str
+    RDB_DATABASE: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -2,18 +2,14 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from langchain_chroma import Chroma
 from langchain_core.language_models import BaseChatModel
 
 from app.core.config import AppSettings
-from app.core.embedding import build_embeddings
 from app.core.llm import build_llm_chain, build_lite_llm
-from app.core.vectordb import build_vectorstore
-from app.repositories.vector_repository import ConventionRepository
-from app.services.agents import build_review_agent, build_question_agent
-from app.services.builder import build_graph, build_question_graph
+from app.core.sql_alchemy import build_rdb, RDB
+from app.graph.agents import build_review_agent, build_question_agent
+from app.graph.builder import build_review_graph, build_question_graph
 from app.services.github_service import GitHubClient
-from app.services.tools import make_search_convention
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -25,12 +21,11 @@ class Container:
     settings: AppSettings
     llm: BaseChatModel
     lite_llm: BaseChatModel
-    vectorstore: Chroma
-    repository: ConventionRepository
     github: GitHubClient
+    rdb: RDB
     review_agent: Any
     question_agent: Any
-    graph: Any
+    review_graph: Any
     question_graph: Any
 
 
@@ -44,15 +39,13 @@ def build_container(settings: AppSettings | None = None) -> Container:
 
     llm = build_llm_chain(settings)
     lite_llm = build_lite_llm(settings)
-    embeddings = build_embeddings(settings)
-    vectorstore = build_vectorstore(settings, embeddings)
 
-    repository = ConventionRepository(vectorstore)
+    rdb = build_rdb(settings)
     github = GitHubClient(settings)
 
     review_agent = build_review_agent(
         model=llm,
-        tools=[make_search_convention(repository)],
+        #        tools=[make_search_convention(session_factory=rdb.session_maker)],
     )
 
     question_agent = build_question_agent(model=llm)
@@ -63,11 +56,10 @@ def build_container(settings: AppSettings | None = None) -> Container:
         settings=settings,
         llm=llm,
         lite_llm=lite_llm,
-        vectorstore=vectorstore,
-        repository=repository,
         github=github,
+        rdb=rdb,
         review_agent=review_agent,
         question_agent=question_agent,
-        graph=build_graph(),
+        review_graph=build_review_graph(),
         question_graph=build_question_graph(),
     )

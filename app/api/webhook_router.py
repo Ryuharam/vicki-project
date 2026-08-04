@@ -3,14 +3,14 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request
 
-from app.api.deps import ContainerDep
+from app.api.deps import ContainerDep, DbDep
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 logger = logging.getLogger("uvicorn.error")
 
 
 @router.post("")
-async def github_webhook(request: Request, container: ContainerDep):
+async def github_webhook(request: Request, container: ContainerDep, db: DbDep):
     """
     GitHub Pull Request 웹훅 이벤트를 처리하는 핸들러
 
@@ -28,7 +28,7 @@ async def github_webhook(request: Request, container: ContainerDep):
     Returns:
         dict: 빈 딕셔너리 (HTTP 200 OK)
     """
-    logger.info("PR Webhook 도착")
+    logger.info("[ROUTER] PR Webhook 도착")
 
     payload_body = await request.body()
     signature_header = request.headers.get("x-hub-signature-256")
@@ -49,6 +49,10 @@ async def github_webhook(request: Request, container: ContainerDep):
     payload = json.loads(payload_body)
     action = payload.get("action")
 
+    # TODO: installation 추가
+    if event_header == "installation":
+        logger.info("Installation webhook")
+
     if not action:
         logger.info("This event doesn't have an action field")
         return {}
@@ -57,12 +61,13 @@ async def github_webhook(request: Request, container: ContainerDep):
         if action in ["opened", "synchronize"]:
             logger.info(f"PR - action : {action}")
 
-            await container.graph.ainvoke(
+            await container.review_graph.ainvoke(
                 {"payload": payload},
                 context={
                     "review_agent": container.review_agent,
                     "github": container.github,
                     "lite_llm": container.lite_llm,
+                    "db_session": db,
                 },
             )
 
@@ -73,6 +78,10 @@ async def github_webhook(request: Request, container: ContainerDep):
             else:
                 logger.info("PR not merged")
     elif event_header == "issue_comment":
+        if not payload.get("issue", {}).get("pull_request", {}):
+            logger.info("PR comment가 아님")
+            return {}
+
         if action == "created":
             if payload.get("comment", {}).get("user", {}).get("type") == "Bot":
                 logger.info("Bot의 comment 등록됨")

@@ -6,14 +6,15 @@ from langchain_core.tools import BaseTool
 from langgraph.checkpoint.memory import InMemorySaver
 
 from app.schemas.response import ReviewComments, QuestionComment
-from app.services.prompts import REVIEW_SYSTEM_PROMPT, QUESTION_PROMPT
+from app.graph.prompts import REVIEW_SYSTEM_PROMPT, QUESTION_PROMPT
 
 
-def build_review_agent(model: BaseChatModel, tools: Sequence[BaseTool]):
+# def build_review_agent(model: BaseChatModel, tools: Sequence[BaseTool]):
+def build_review_agent(model: BaseChatModel):
     """리뷰 agent를 조립합니다. 모델과 tool은 주입받습니다."""
     return create_agent(
         model=model,
-        tools=list(tools),
+        #        tools=list(tools),
         system_prompt=REVIEW_SYSTEM_PROMPT,
         response_format=ReviewComments,
     )

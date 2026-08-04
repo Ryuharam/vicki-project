@@ -10,7 +10,7 @@ from app.schemas.state import (
     QuestionBotState,
     QuestionBotContext,
 )
-from app.services.prompts import REVIEW_DECISION_PROMPT
+from app.graph.prompts import REVIEW_DECISION_PROMPT
 
 logger = logging.getLogger("uvicorn.error")
 

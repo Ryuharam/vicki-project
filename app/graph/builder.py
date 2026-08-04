@@ -6,7 +6,7 @@ from app.schemas.state import (
     QuestionBotState,
     QuestionBotContext,
 )
-from app.services.nodes import (
+from app.graph.nodes import (
     preprocess_node,
     comment_node,
     review_node,
@@ -16,10 +16,10 @@ from app.services.nodes import (
     post_answer_node,
     question_preprocess_node,
 )
-from app.services.edges import route_review
+from app.graph.edges import route_review
 
 
-def build_graph():
+def build_review_graph():
     builder = StateGraph(state_schema=ReviewBotState, context_schema=ReviewBotContext)
 
     builder.add_node("preprocess", preprocess_node)

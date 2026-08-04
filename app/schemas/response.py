@@ -1,6 +1,6 @@
 # API 응답 형식 데이터 검증 (Pydantic)
 from typing import Optional, Literal, ClassVar
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class GitHubFileItem(BaseModel):
@@ -82,3 +82,14 @@ class QuestionComment(BaseModel):
     answer: str = Field(description="사용자에게 보여줄 최종 답변")
 
     related: bool = Field(description="질문이 PR 리뷰와 관련있는지 여부")
+
+
+class ConventionOut(BaseModel):
+    """컨벤션 문서 응답 스키마. ORM 객체를 그대로 노출하지 않기 위한 경계입니다."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    convention_id: int
+    repo_id: int
+    filename: str
+    uploaded_by: int

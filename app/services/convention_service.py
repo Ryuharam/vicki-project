@@ -45,6 +45,8 @@ class ConventionService:
             )
 
             await self.db.commit()
+
+            logger.info(f"result : {result}")
             return result
         except IntegrityError:
             await self.db.rollback()

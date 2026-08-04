@@ -17,13 +17,35 @@ class ConventionRepository:
 
         result = await self.db.execute(select(Convention))
 
-        return result.scalars().all()
+        conventions = result.scalars().all()
+
+        response = [
+            {
+                "convention_id": r.convention_id,
+                "repo_id": r.repo_id,
+                "filename": r.filename,
+                "uploaded_by": r.uploaded_by,
+            }
+            for r in conventions
+        ]
+
+        return response
 
     async def get_convention_py_repo_id(self, repo_id: int) -> list[Convention]:
         stmt = select(Convention).where(Convention.repo_id == repo_id)
         result = await self.db.scalars(stmt)
 
-        return list(result)
+        response = [
+            {
+                "convention_id": r.convention_id,
+                "repo_id": r.repo_id,
+                "filename": r.filename,
+                "uploaded_by": r.uploaded_by,
+            }
+            for r in result
+        ]
+
+        return response
 
     async def create_repo_convention(
         self,

@@ -82,11 +82,23 @@ jobs:
           GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
           OLLAMA_MODEL=gemma4:e2b-mlx
+          LITE_MODEL=ollama:qwen2.5-coder:1.5b
+          RDB_HOST=${{ secrets.RDB_HOST }}
+          RDB_PORT=${{ secrets.RDB_PORT }}
+          RDB_USER=${{ secrets.RDB_USER }}
+          RDB_PASSWORD=${{ secrets.RDB_PASSWORD }}
+          RDB_DATABASE=${{ secrets.RDB_DATABASE }}
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           EOF
       
-      - name: Copy nginx.conf, docker-compose.yml and .env
+      - name: Copy nginx.conf, docker-compose.yml, .env and DDL
         run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "mkdir -p /home/${{ secrets.SERVER_USER }}/db"
+
+          scp -i ~/.ssh/id_rsa db/*.sql \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/db/
+
           scp -i ~/.ssh/id_rsa docker-compose.yml \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/
 
@@ -113,6 +125,24 @@ jobs:
             cd /home/${{ secrets.SERVER_USER }}
 
             docker compose pull
+
+            docker compose up -d postgresql
+
+            for i in $(seq 1 30); do
+              if docker compose exec -T postgresql \
+                   sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > /dev/null 2>&1; then
+                break
+              fi
+              echo "[DDL] postgres 준비 대기 중... ($i/30)"
+              sleep 2
+            done
+
+            for f in /home/${{ secrets.SERVER_USER }}/db/*.sql; do
+              echo "[DDL] apply $f"
+              docker compose exec -T postgresql \
+                sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$f"
+            done
+
             docker compose up -d --remove-orphans
           EOF
           

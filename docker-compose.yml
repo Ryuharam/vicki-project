@@ -8,12 +8,26 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - /home/ubuntu/certs:/etc/nginx/certs
-
-  chroma:
-    image: chromadb/chroma
-    container_name: chroma-app
+  
+  postgresql:
+    image: postgres:18
+    restart: always
+    shm_size: '1gb' # 호스트 RAM의 25% ~ 40% 권장
+    ports:
+      - "127.0.0.1:5432:5432"
+    env_file:
+      - .env
+    environment:
+        POSTGRES_USER: ${RDB_USER}
+        POSTGRES_PASSWORD: ${RDB_PASSWORD}
+        POSTGRES_DB: ${RDB_DATABASE}
     volumes:
-      - ./chroma-data:/data 
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 
   app-image:
@@ -23,3 +37,7 @@ services:
       - .env
     volumes:
       - ./secret/github-app.pem:${GITHUB_KEY_FILE_PATH}:ro
+
+
+volumes:
+  postgres-data:

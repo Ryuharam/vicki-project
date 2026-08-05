@@ -88,6 +88,9 @@ jobs:
           RDB_PASSWORD=${{ secrets.RDB_PASSWORD }}
           RDB_DATABASE=${{ secrets.RDB_DATABASE }}
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+          LANGSMITH_TRACING=true
+          LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}
           EOF
       
       - name: Copy nginx.conf, docker-compose.yml, .env and DDL

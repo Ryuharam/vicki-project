@@ -1,6 +1,12 @@
 ## 코드리뷰 봇 프로젝트
 GitHub 에서 사용자가 Pull Request를 열었을 때 코드 리뷰 후 comment를 달아주는 bot 프로젝트
 
+## 관련 링크
+- 서비스 주소
+    https://vicki.ai.kr/
+- 프론트엔드 레포지토리
+    https://github.com/Ryuharam/prism-fe
+
 ## 주요기능
 1. Web hook으로 PR / PR comment 이벤트 수신
 2. 코드 변경 사항 조회

@@ -127,19 +127,27 @@ jobs:
 
             docker compose up -d postgresql
 
-            for i in $(seq 1 30); do
+            ready=0
+            for i in $(seq 1 60); do
               if docker compose exec -T postgresql \
-                   sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > /dev/null 2>&1 < /dev/null; then
+                   sh -c 'pg_isready -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > /dev/null 2>&1 < /dev/null; then
+                ready=1
                 break
               fi
-              echo "[DDL] postgres 준비 대기 중... ($i/30)"
+              echo "[DDL] postgres 준비 대기 중... ($i/60)"
               sleep 2
             done
+
+            if [ "$ready" -ne 1 ]; then
+              echo "[DDL] postgres 가 제한 시간 내에 준비되지 않았습니다"
+              docker compose logs --tail=100 postgresql
+              exit 1
+            fi
 
             for f in /home/${{ secrets.SERVER_USER }}/db/*.sql; do
               echo "[DDL] apply $f"
               docker compose exec -T postgresql \
-                sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$f"
+                sh -c 'psql -h 127.0.0.1 -p 5432 -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$f"
             done
 
             docker compose up -d --remove-orphans

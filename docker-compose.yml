@@ -24,10 +24,13 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      # initdb 중 뜨는 임시 서버는 TCP를 열지 않으므로 127.0.0.1 로 확인해야
+      # 진짜 서버가 뜬 시점만 healthy 로 잡힙니다.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 60s
 
 
   app-image:

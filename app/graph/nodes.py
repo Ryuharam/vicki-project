@@ -149,14 +149,20 @@ async def router_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
     logger.info("[START] router node 시작")
     llm = runtime.context["lite_llm"]
 
-    structured_llm = llm.with_structured_output(ReviewRouterItem)
+    structured_llm = llm.with_structured_output(
+        ReviewRouterItem, method="json_schema"
+    )
 
     system = SystemMessage(content=REVIEW_DECISION_PROMPT)
     human = HumanMessage(content=f"PR 내용 :\n\n{state["diff_summary"]}")
 
     result = await structured_llm.ainvoke([system, human])
 
-    logger.info(f"리뷰가 필요하다고 생각한 근거는?\n{result.reason}")
+    logger.info(
+        f"[router] {result.review_decision} "
+        f"/ evidence: {result.changed_code_evidence!r} "
+        f"/ skip_reason: {result.skip_reason!r}"
+    )
 
     return {
         "review_decision": result.review_decision,
@@ -175,7 +181,7 @@ async def post_reject_node(state: ReviewBotState, runtime: Runtime[ReviewBotCont
         repo=state["repo"],
         pull_number=state["pull_number"],
         token=state["access_token"],
-        event="REQUEST_CHANGES",
+        event="COMMENT",
         body=state["reject_reason"],
     )
 

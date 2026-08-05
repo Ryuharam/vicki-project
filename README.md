@@ -128,39 +128,41 @@ flowchart LR
 ├── README.md
 ├── app
 │   ├── api
-│   │   ├── convention_router.py
 │   │   ├── deps.py
 │   │   └── webhook_router.py
 │   ├── core
 │   │   ├── config.py
 │   │   ├── container.py
-│   │   ├── embedding.py
-│   │   ├── llm.py
-│   │   └── vectordb.py
+│   │   └── llm.py
+│   ├── exceptions
+│   │   ├── custom_exception.py
+│   │   └── handler.py
+│   ├── graph
+│   │   ├── agents.py
+│   │   ├── builder.py
+│   │   ├── edges.py
+│   │   ├── nodes.py
+│   │   └── prompts.py
 │   ├── main.py
-│   ├── repositories
-│   │   └── vector_repository.py
+│   ├── models
+│   │   ├── base.py
+│   │   ├── convention.py
+│   │   ├── repository.py
+│   │   ├── session.py
+│   │   └── user.py
 │   ├── schemas
 │   │   ├── response.py
 │   │   └── state.py
 │   └── services
-│       ├── agents.py
-│       ├── builder.py
 │       ├── convention_service.py
-│       ├── edges.py
-│       ├── github_service.py
-│       ├── nodes.py
-│       ├── prompts.py
-│       └── tools.py
+│       └── github_service.py
+├── db
 ├── docker-compose.yml
 ├── docs
 ├── nginx.conf
 ├── pyproject.toml
 ├── test
-│   ├── conftest.py
-│   ├── test_convention_service.py
-│   ├── test_llm.py
-│   └── test_main.py
+│   └── test_smoke.py
 └── uv.lock
 ```
 

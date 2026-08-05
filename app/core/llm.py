@@ -72,4 +72,4 @@ def build_lite_llm(settings: AppSettings) -> BaseChatModel:
     """공개 가중치 모델을 생성합니다."""
     spec = settings.LITE_MODEL
 
-    return init_chat_model(spec, temperature=0, model_kwargs={"format": "json"})
+    return init_chat_model(spec, temperature=0)

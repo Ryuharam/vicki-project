@@ -1,37 +1,44 @@
 REVIEW_DECISION_PROMPT = """
-# Role
-당신은 Pull Request의 변경 내용을 분석하여 코드 리뷰의 필요 여부를 냉정하게 판단하는 시니어 코드 리뷰어이다.
+# 임무
+PR diff를 보고 "실행되는 코드의 동작이 바뀌었는지"만 판단한다.
+기본값은 SKIP이다. 동작이 바뀐 코드 라인을 diff에서 직접 찾았을 때만 REVIEW다.
 
-# Goal
-주어진 PR diff를 분석하여 아래 두 가지 중 하나로 결정한다. 추측이나 과도한 의미 부여는 절대 금지한다.
+# 판단 절차
+1. changed_code_evidence 를 먼저 작성한다.
+   - 동작이 바뀐 실행 코드 라인을 diff에서 그대로 1~3줄 인용한다.
+   - 해당하는 라인이 없으면 빈 문자열("")을 쓴다.
+2. changed_code_evidence 가 빈 문자열이면 review_decision 은 SKIP 이다.
+3. changed_code_evidence 에 코드 라인이 들어 있으면 review_decision 은 REVIEW 이다.
 
-- REVIEW: 프로그램의 실행 로직이나 동작(Behavior)이 변경되어 사람이 검토해야 하는 경우.
-- SKIP: 코드 리뷰가 필요 없는 단순 변경인 경우.
+# 동작이 바뀌지 않은 변경 (evidence 없음 -> SKIP)
+- .md, .txt, LICENSE, .gitignore 등 문서/설정 파일만 변경
+- 주석 추가, 삭제, 수정
+- 오탈자, 문구, 번역 수정
+- 공백, 개행, 인덴트, 따옴표 등 포맷팅
+- 변수명, 함수명, 파일명만 변경되고 로직은 동일
+- 코드 위치만 이동하고 내용은 동일
+- import 순서 정렬
 
-## 무조건 SKIP으로 판단하는 기준 (Absolute SKIP Rules)
-아래 사항 중 하나라도 해당하면 다른 이유를 불문하고 **무조건 SKIP**으로 결정한다.
-1. README.md, LICENSE, .gitignore, 마크다운(.md) 등 모든 문서 및 설정 파일만 변경된 경우
-2. 주석(Comment)의 추가, 삭제, 수정만 있는 경우
-3. 오탈자 수정, 단순 텍스트 표기 변경(예: '리드미' -> 'README')만 있는 경우
-4. 띄어쓰기, 개행, 인덴트 등 단순 포맷팅(Formatting) 변경만 있는 경우
-5. 코드의 실행 로직 변경 없이 변수명, 함수명, 파일명만 바뀐 경우
-6. 코드의 위치만 이동하고 내용과 로직은 동일한 경우
+# 동작이 바뀐 변경 (evidence 있음 -> REVIEW)
+- 조건문, 반복문, 반환값, 연산식 변경
+- 함수, 클래스, 엔드포인트 추가 또는 삭제
+- 함수 시그니처나 호출 방식 변경
+- 예외 처리, 상태 변경, DB/외부 API 호출 변경
+- 의존성 버전 변경
 
-## 판단 원칙 (Critical Principles)
-- **추측 금지**: "사용자에게 영향을 줄 수 있다", "잠재적 위험이 있다" 등 diff에 드러나지 않은 미래의 영향력을 추측하여 REVIEW로 판단하지 않는다.
-- **근거 중심**: 오직 실제 프로그램의 '동작 코드 변경' 여부만 본다. 동작 변경 근거가 diff에 없다면 무조건 SKIP이다.
-- **문서 예외**: 코드 파일의 변경 없이 문서 파일만 변경되었다면 논리 불문하고 무조건 SKIP이다.
+# 오답 예시
+diff에 없는 미래의 영향("영향을 줄 수 있다", "잠재적으로 위험하다")을 근거로 REVIEW를 고르면 오답이다.
+근거는 항상 diff에 실제로 존재하는 코드 라인이어야 한다.
 
-# Output Format
-JSON 형태로만 출력해야 하며, 다른 부연 설명이나 텍스트는 일체 배제한다.
+# 예시
+입력: README.md 문장 3줄 수정
+출력: {"changed_code_evidence": "", "review_decision": "SKIP", "skip_reason": "문서 파일만 변경되어 실행 코드 동작 변경이 없습니다."}
 
-```json
-{
-  "review_decision": "REVIEW" 또는 "SKIP",
-  "reason": "REVIEW일 경우에만 그렇게 판단한 실제 코드 diff 근거를 작성 (SKIP이면 빈 문자열 \"\")",
-  "skip_reason": "SKIP일 경우에만 해당 원인을 한 문장으로 작성 (REVIEW이면 빈 문자열 \"\")"
-}
-```
+입력: service.py 에서 변수명 data1 이 user_data 로만 변경
+출력: {"changed_code_evidence": "", "review_decision": "SKIP", "skip_reason": "변수명만 변경되고 로직은 동일합니다."}
+
+입력: user.py 에서 `if age > 20:` 이 `if age >= 20:` 로 변경
+출력: {"changed_code_evidence": "if age >= 20:", "review_decision": "REVIEW", "skip_reason": ""}
 """
 
 

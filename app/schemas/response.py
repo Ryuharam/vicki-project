@@ -19,9 +19,17 @@ class GitHubFileItem(BaseModel):
 class ReviewRouterItem(BaseModel):
     """리뷰 필요 유무 판단과 그 이유"""
 
-    review_decision: Literal["REVIEW", "SKIP"] = Field(description="리뷰")
-    reason: str = Field(description="리뷰가 필요하다고 판단한 근거")
-    skip_reason: str = Field(description="리뷰를 skip 했다면, skip으로 결정한 이유")
+    changed_code_evidence: str = Field(
+        description="diff에서 실행 동작이 바뀐 코드 라인을 그대로 1~3줄 인용한다. "
+        "문서/주석/포맷팅/이름 변경뿐이라면 빈 문자열."
+    )
+    review_decision: Literal["SKIP", "REVIEW"] = Field(
+        description="changed_code_evidence가 빈 문자열이면 SKIP, "
+        "실제 코드 라인이 들어 있으면 REVIEW. 기본값은 SKIP."
+    )
+    skip_reason: str = Field(
+        description="SKIP일 때 그 이유를 한 문장으로. REVIEW면 빈 문자열."
+    )
 
 
 class ReviewCommentItem(BaseModel):

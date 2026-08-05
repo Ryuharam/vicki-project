@@ -81,7 +81,7 @@ jobs:
           LLM_FALLBACKS=${{ secrets.LLM_FALLBACKS }}
           GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          LITE_MODEL=ollama:qwen2.5-coder:1.5b
+          LITE_MODEL=ollama:gemma4:e2b
           RDB_HOST=${{ secrets.RDB_HOST }}
           RDB_PORT=${{ secrets.RDB_PORT }}
           RDB_USER=${{ secrets.RDB_USER }}

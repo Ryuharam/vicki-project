@@ -1,16 +1,20 @@
 import json
 import logging
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 
-from app.api.deps import ContainerDep, DbDep
+from app.api.deps import ContainerDep
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 logger = logging.getLogger("uvicorn.error")
 
 
 @router.post("")
-async def github_webhook(request: Request, container: ContainerDep, db: DbDep):
+async def github_webhook(
+    request: Request,
+    container: ContainerDep,
+    background_tasks: BackgroundTasks,
+):
     """
     GitHub Pull Request 웹훅 이벤트를 처리하는 핸들러
 
@@ -44,14 +48,8 @@ async def github_webhook(request: Request, container: ContainerDep, db: DbDep):
         raise HTTPException(status_code=403, detail="Request signatures didn't match!")
 
     event_header = request.headers.get("X-Github-Event")
-    logger.info(f"event: {event_header}")
-
     payload = json.loads(payload_body)
     action = payload.get("action")
-
-    # TODO: installation 추가
-    if event_header == "installation":
-        logger.info("Installation webhook")
 
     if not action:
         logger.info("This event doesn't have an action field")
@@ -59,24 +57,15 @@ async def github_webhook(request: Request, container: ContainerDep, db: DbDep):
 
     if event_header == "pull_request":
         if action in ["opened", "synchronize"]:
-            logger.info(f"PR - action : {action}")
-
-            await container.review_graph.ainvoke(
+            background_tasks.add_task(
+                container.review_graph.ainvoke,
                 {"payload": payload},
                 context={
                     "review_agent": container.review_agent,
                     "github": container.github,
                     "lite_llm": container.lite_llm,
-                    "db_session": db,
                 },
             )
-
-        elif action == "closed":
-            logger.info("PR closed")
-            if payload.get("pull_request", {}).get("merged"):
-                logger.info("PR merged")
-            else:
-                logger.info("PR not merged")
     elif event_header == "issue_comment":
         if not payload.get("issue", {}).get("pull_request", {}):
             logger.info("PR comment가 아님")
@@ -87,13 +76,12 @@ async def github_webhook(request: Request, container: ContainerDep, db: DbDep):
                 logger.info("Bot의 comment 등록됨")
                 return {}
 
-            await container.question_graph.ainvoke(
+            background_tasks.add_task(
+                container.question_graph.ainvoke,
                 {"payload": payload},
                 context={
                     "question_agent": container.question_agent,
                     "github": container.github,
                 },
             )
-        else:
-            print(action)
     return {}

@@ -70,6 +70,8 @@ class GitHubClient:
         response = httpx.post(url=url, headers=headers)
         response_data = response.json()
 
+        # TODO: response_data.get("expires_at") 캐싱
+
         return response_data.get("token")
 
     async def get_pr_files(

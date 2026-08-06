@@ -1,27 +1,33 @@
 # LangGraph의 State 정의
 from typing import TypedDict, List, Annotated, Any, Literal
-from langgraph.graph.message import add_messages
+from langgraph.graph.message import add_messages, BaseMessage
 
 from app.schemas.response import GitHubFileItem
 
 
-class ReviewBotState(TypedDict):
+class BaseState(TypedDict):
     payload: dict
     installation_id: str
     access_token: str
     owner: str
-    repo: str
+    repo: str  # repo 이름
     repo_id: int
     pull_number: int
+    messages: Annotated[list[BaseMessage], add_messages]
+
+
+class ReviewBotState(BaseState):
     pr_files: List[GitHubFileItem]
     review_decision: Literal["REVIEW", "SKIP"]
     reject_reason: str
-    messages: Annotated[list, add_messages]
     pr_title: str
     pr_body: str
+    has_convention: bool
+    llm_result: str
     review_result: str
     diff_summary: str
     verdict: Literal["APPROVE", "REQUEST_CHANGES", "COMMENT"]
+    conventions: list
 
 
 class ReviewBotContext(TypedDict):
@@ -30,15 +36,11 @@ class ReviewBotContext(TypedDict):
     lite_llm: Any
 
 
-class QuestionBotState(TypedDict):
-    payload: dict
-    installation_id: str
-    access_token: str
-    owner: str
-    repo: str
-    repo_id: int
-    pull_number: int
-    comment: str
+class QuestionBotState(BaseState):
+    question: str
+    reviews: list
+    comments: list
+    context: str
     answer: str
 
 

@@ -20,13 +20,6 @@ class AppSettings(BaseSettings):
     GOOGLE_API_KEY: str | None = None
     ANTHROPIC_API_KEY: str | None = None
 
-    # rdb
-    RDB_HOST: str
-    RDB_PORT: int
-    RDB_USER: str
-    RDB_PASSWORD: str
-    RDB_DATABASE: str
-
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,

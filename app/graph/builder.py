@@ -7,14 +7,21 @@ from app.schemas.state import (
     QuestionBotContext,
 )
 from app.graph.nodes import (
-    preprocess_node,
-    comment_node,
-    review_node,
-    post_reject_node,
+    request_token_node,
+    review_preprocess_node,
+    question_preprocess_node,
+    request_diff_node,
     router_node,
+    post_skip_reason_node,
+    request_convention_node,
+    review_node,
+    parsing_output_node,
+    post_review_node,
+    request_reviews_node,
+    request_comments_node,
+    context_builder_node,
     answer_node,
     post_answer_node,
-    question_preprocess_node,
 )
 from app.graph.edges import route_review
 
@@ -22,19 +29,28 @@ from app.graph.edges import route_review
 def build_review_graph():
     builder = StateGraph(state_schema=ReviewBotState, context_schema=ReviewBotContext)
 
-    builder.add_node("preprocess", preprocess_node)
-    builder.add_node("review", review_node)
-    builder.add_node("comment", comment_node)
-    builder.add_node("reject", post_reject_node)
+    builder.add_node("request_token", request_token_node)
+    builder.add_node("preprocess", review_preprocess_node)
+    builder.add_node("request_diff", request_diff_node)
     builder.add_node("router", router_node)
+    builder.add_node("skip", post_skip_reason_node)
+    builder.add_node("request_convention", request_convention_node)
+    builder.add_node("review", review_node)
+    builder.add_node("parsing", parsing_output_node)
+    builder.add_node("post_review", post_review_node)
 
-    builder.add_edge(START, "preprocess")
-    builder.add_edge("preprocess", "router")
+    builder.add_edge(START, "request_token")
+    builder.add_edge("request_token", "preprocess")
+    builder.add_edge("preprocess", "request_diff")
+    builder.add_edge("request_diff", "router")
     builder.add_conditional_edges(
-        "router", route_review, {"SKIP": "reject", "REVIEW": "review"}
+        "router", route_review, {"SKIP": "skip", "REVIEW": "request_convention"}
     )
-    builder.add_edge("review", "comment")
-    builder.add_edge("comment", END)
+    builder.add_edge("skip", END)
+    builder.add_edge("request_convention", "review")
+    builder.add_edge("review", "parsing")
+    builder.add_edge("parsing", "post_review")
+    builder.add_edge("post_review", END)
 
     return builder.compile()
 
@@ -44,13 +60,22 @@ def build_question_graph():
         state_schema=QuestionBotState, context_schema=QuestionBotContext
     )
 
+    builder.add_node("request_token", request_token_node)
     builder.add_node("preprocess", question_preprocess_node)
+    builder.add_node("request_reviews", request_reviews_node)
+    builder.add_node("request_comments", request_comments_node)
+    builder.add_node("context_build", context_builder_node)
     builder.add_node("answer", answer_node)
-    builder.add_node("post", post_answer_node)
+    builder.add_node("post_answer", post_answer_node)
 
-    builder.add_edge(START, "preprocess")
-    builder.add_edge("preprocess", "answer")
-    builder.add_edge("answer", "post")
-    builder.add_edge("post", END)
+    builder.add_edge(START, "request_token")
+    builder.add_edge("request_token", "preprocess")
+    builder.add_edge("preprocess", "request_reviews")
+    builder.add_edge("preprocess", "request_comments")
+    builder.add_edge("request_reviews", "context_build")
+    builder.add_edge("request_comments", "context_build")
+    builder.add_edge("context_build", "answer")
+    builder.add_edge("answer", "post_answer")
+    builder.add_edge("post_answer", END)
 
     return builder.compile()

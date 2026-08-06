@@ -82,25 +82,14 @@ jobs:
           GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
           LITE_MODEL=ollama:gemma4:e2b
-          RDB_HOST=${{ secrets.RDB_HOST }}
-          RDB_PORT=${{ secrets.RDB_PORT }}
-          RDB_USER=${{ secrets.RDB_USER }}
-          RDB_PASSWORD=${{ secrets.RDB_PASSWORD }}
-          RDB_DATABASE=${{ secrets.RDB_DATABASE }}
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           LANGSMITH_TRACING=true
           LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}
           LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}
           EOF
       
-      - name: Copy nginx.conf, docker-compose.yml, .env and DDL
+      - name: Copy nginx.conf, docker-compose.yml, .env
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "mkdir -p /home/${{ secrets.SERVER_USER }}/db"
-
-          scp -i ~/.ssh/id_rsa db/*.sql \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/db/
-
           scp -i ~/.ssh/id_rsa docker-compose.yml \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/${{ secrets.SERVER_USER }}/
 
@@ -128,41 +117,9 @@ jobs:
 
             docker compose pull
 
-            docker compose up -d postgresql
-
-            ready=0
-            for i in $(seq 1 60); do
-              if docker compose exec -T postgresql \
-                   sh -c 'pg_isready -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > /dev/null 2>&1 < /dev/null; then
-                ready=1
-                break
-              fi
-              echo "[DDL] postgres 준비 대기 중... ($i/60)"
-              sleep 2
-            done
-
-            if [ "$ready" -ne 1 ]; then
-              echo "[DDL] postgres 가 제한 시간 내에 준비되지 않았습니다"
-              docker compose logs --tail=100 postgresql
-              exit 1
-            fi
-
-            for f in /home/${{ secrets.SERVER_USER }}/db/*.sql; do
-              echo "[DDL] apply $f"
-              docker compose exec -T postgresql \
-                sh -c 'psql -h 127.0.0.1 -p 5432 -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$f"
-            done
-
             docker compose up -d --remove-orphans
 
             sleep 10
             docker compose ps
-            for s in app-image nginx-image postgresql; do
-              if [ -z "$(docker compose ps -q --status running "$s")" ]; then
-                echo "[DEPLOY] $s 가 running 상태가 아닙니다"
-                docker compose logs --tail=50 "$s"
-                exit 1
-              fi
-            done
           EOF
           

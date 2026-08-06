@@ -48,6 +48,8 @@ async def github_webhook(
         raise HTTPException(status_code=403, detail="Request signatures didn't match!")
 
     event_header = request.headers.get("X-Github-Event")
+    delivery_header = request.headers.get("X-Github-Delivery")
+
     payload = json.loads(payload_body)
     action = payload.get("action")
 

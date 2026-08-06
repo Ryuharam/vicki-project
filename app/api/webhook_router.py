@@ -1,3 +1,4 @@
+import re
 import json
 import logging
 
@@ -7,6 +8,8 @@ from app.api.deps import ContainerDep
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
 logger = logging.getLogger("uvicorn.error")
+
+PRISM_COMMAND_PATTERN = re.compile(r"^\s*/prism(?:\s|$)", re.IGNORECASE)
 
 
 @router.post("")
@@ -76,6 +79,12 @@ async def github_webhook(
         if action == "created":
             if payload.get("comment", {}).get("user", {}).get("type") == "Bot":
                 logger.info("Bot의 comment 등록됨")
+                return {}
+
+            body = payload.get("comment", {}).get("body", "")
+
+            if not PRISM_COMMAND_PATTERN.match(body):
+                logger.info("/prism 명령이 아님")
                 return {}
 
             background_tasks.add_task(

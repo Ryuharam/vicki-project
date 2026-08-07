@@ -29,7 +29,7 @@ class ReviewBotState(BaseState):
     has_convention: bool
     llm_result: str
     review_result: str
-    diff_summary: str
+    diff_files: list
     verdict: Literal["APPROVE", "REQUEST_CHANGES", "COMMENT"]
     conventions: list
 

@@ -95,23 +95,23 @@ async def request_diff_node(
     """PR의 diff 목록을 가져와 리뷰용 텍스트로 합칩니다. 컨벤션 문서 변경분은 제외합니다."""
     github = runtime.context["github"]
 
-    diff_files = await github.get_pr_files(
+    diff_data = await github.get_pr_files(
         owner=state["owner"],
         repo=state["repo"],
         pull_number=state["pull_number"],
         token=state["access_token"],
     )
 
-    diff_summary = "리뷰할 PR의 변경점(Diff) 목록입니다. :\n"
-    for file in diff_files:
+    diff_files = []
+    for file in diff_data:
         if file.filename.startswith(".convention/"):
             logger.info(f"[request_diff] 컨벤션 문서라 제외: {file.filename}")
             continue
-        diff_summary += (
-            f"\n파일명: {file.filename}\n\n{file.patch or "변경 내용 없음"}\n\n"
+        diff_files.append(
+            {"filename": file.filename, "status": file.status, "patch": file.patch}
         )
 
-    return {"diff_summary": diff_summary}
+    return {"diff_files": diff_files}
 
 
 async def router_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]):
@@ -121,7 +121,7 @@ async def router_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext])
     structured_llm = llm.with_structured_output(ReviewRouterItem, method="json_schema")
 
     system = SystemMessage(content=REVIEW_DECISION_PROMPT)
-    human = HumanMessage(content=f"PR 내용 :\n\n{state["diff_summary"]}")
+    human = HumanMessage(content=f"PR 내용 :\n\n{state["diff_files"]}")
 
     result = await structured_llm.ainvoke([system, human])
 
@@ -195,7 +195,7 @@ async def review_node(
 
     review_agent = runtime.context["review_agent"]
 
-    content = f"Pull request 내용과 Diff 내용, 컨벤션 문서 내용을 바탕으로 코드 리뷰 해줘.\n\n Pull request:\n - title: \n{state["pr_title"]}\n - body: \n{state["pr_body"]}\n\nPR Diff: \n{state["diff_summary"]}\n\n Convention docs: \n{state["conventions"]}"
+    content = f"Pull request 내용과 Diff 내용, 컨벤션 문서 내용을 바탕으로 코드 리뷰 해줘.\n\n Pull request:\n - title: \n{state["pr_title"]}\n - body: \n{state["pr_body"]}\n\nPR Diff: \n{state["diff_files"]}\n\n Convention docs: \n{state["conventions"]}"
 
     result = await review_agent.ainvoke({"messages": [HumanMessage(content=content)]})
 
@@ -258,7 +258,7 @@ def parsing_response(response: ReviewComments) -> str:
                 f"- category: {comment.category}",
                 f"- issue: {comment.issue}",
                 f"- suggestion: {comment.suggestion}",
-                "",
+                f"- source: {comment.source_filename}" "",
             ]
         )
 

@@ -1,6 +1,6 @@
 # API 응답 형식 데이터 검증 (Pydantic)
 from typing import Optional, Literal, ClassVar
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 
 
 class GitHubFileItem(BaseModel):
@@ -63,6 +63,15 @@ class ReviewCommentItem(BaseModel):
     suggestion: str = Field(
         description="문제를 해결하기 위한 구체적인 개선 방법을 작성한다. "
         "실행 가능한 제안을 작성하며, 추상적인 표현은 피한다."
+    )
+    source_filename: str = Field(
+        description=(
+            "PR Diff에 있는 filename을 정확히 반환합니다. "
+            "주의 사항: "
+            "1. 파일명에 경로(Path)는 제외하고 확장자를 포함한 파일 이름만 추출하세요. "
+            "2. 답변의 근거가 된 핵심 파일이 명확히 존재할 때만 해당 파일명을 반환하세요. "
+            "3. 만약 참고한 파일이 없거나 판단하기 어렵다면, 다른 설명 없이 오직 '없음'이라는 문자열만 반환해야 합니다."
+        )
     )
 
 

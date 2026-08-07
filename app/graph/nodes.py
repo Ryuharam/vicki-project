@@ -115,7 +115,7 @@ async def request_diff_node(
 
 
 async def router_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]):
-    """lite 모델로 diff를 훑어 리뷰를 진행할지(REVIEW/SKIP) 판단합니다."""
+    """경량 모델로 diff를 훑어 리뷰를 진행할지(REVIEW/SKIP) 판단합니다."""
     llm = runtime.context["lite_llm"]
 
     structured_llm = llm.with_structured_output(ReviewRouterItem, method="json_schema")

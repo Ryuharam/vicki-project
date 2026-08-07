@@ -24,7 +24,9 @@ async def run_graph(name: str, graph: Any, payload: dict, context: dict) -> None
     try:
         await graph.ainvoke({"payload": payload}, context=context)
     except Exception:
-        logger.exception(f"[{name}] 실행 실패 ({time.perf_counter() - started_at:.1f}s)")
+        logger.exception(
+            f"[{name}] 실행 실패 ({time.perf_counter() - started_at:.1f}s)"
+        )
         return
 
     logger.info(f"[{name}] 실행 완료 ({time.perf_counter() - started_at:.1f}s)")
@@ -105,6 +107,10 @@ async def github_webhook(
         if action == "created":
             if payload.get("comment", {}).get("user", {}).get("type") == "Bot":
                 logger.info("[webhook] Bot이 작성한 comment라 무시합니다.")
+                return {}
+
+            if payload.get("issue", {}).get("state", {}) == "closed":
+                logger.info("[webhook] 이미 닫힌 pull reqeust라 무시합니다.")
                 return {}
 
             body = payload.get("comment", {}).get("body", "")

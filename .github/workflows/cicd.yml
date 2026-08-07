@@ -81,7 +81,7 @@ jobs:
           LLM_FALLBACKS=${{ secrets.LLM_FALLBACKS }}
           GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          LITE_MODEL=ollama:gemma4:e2b
+          LITE_MODEL=google_genai:gemini-2.5-flash
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           LANGSMITH_TRACING=true
           LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}

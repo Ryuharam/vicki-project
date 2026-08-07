@@ -42,7 +42,6 @@ def build_container(settings: AppSettings | None = None) -> Container:
 
     review_agent = build_review_agent(
         model=llm,
-        #        tools=[make_search_convention(session_factory=rdb.session_maker)],
     )
 
     question_agent = build_question_agent(model=llm)

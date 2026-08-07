@@ -5,7 +5,7 @@ from langchain_core.language_models import BaseChatModel
 
 from app.core.config import AppSettings
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 _API_KEY_SETTING = {
     "google_genai": "GOOGLE_API_KEY",
@@ -35,7 +35,10 @@ def _rate_limit_errors() -> tuple[type[BaseException], ...]:
 
 
 def build_llm(spec: str, settings: AppSettings, **kwargs) -> BaseChatModel:
-    """ "provider:model" 스펙으로 채팅 모델 하나를 생성합니다."""
+    """`provider:model` 스펙으로 채팅 모델 하나를 생성합니다.
+
+    provider에 API 키가 필요하면 settings에서 찾아 주입하고, 없으면 ValueError를 던집니다.
+    """
     provider = spec.split(":", 1)[0]
 
     setting_name = _API_KEY_SETTING.get(provider)
@@ -51,7 +54,10 @@ def build_llm(spec: str, settings: AppSettings, **kwargs) -> BaseChatModel:
 
 
 def build_llm_chain(settings: AppSettings) -> BaseChatModel:
-    """주 모델과 대체 모델을 묶은 체인을 만듭니다."""
+    """주 모델과 대체 모델을 묶은 체인을 만듭니다.
+
+    fallback 대상 예외가 하나도 없으면 주 모델만 반환합니다.
+    """
     primary = build_llm(settings.LLM_PRIMARY, settings)
 
     if not settings.LLM_FALLBACKS:
@@ -69,7 +75,7 @@ def build_llm_chain(settings: AppSettings) -> BaseChatModel:
 
 
 def build_lite_llm(settings: AppSettings) -> BaseChatModel:
-    """공개 가중치 모델을 생성합니다."""
+    """라우팅 등 가벼운 판단에 쓰는 lite 모델을 생성합니다."""
     spec = settings.LITE_MODEL
 
     return init_chat_model(spec, temperature=0)

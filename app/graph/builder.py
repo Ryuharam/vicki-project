@@ -27,6 +27,11 @@ from app.graph.edges import route_review
 
 
 def build_review_graph():
+    """PR 리뷰 그래프를 조립해 컴파일합니다.
+
+    토큰 발급 → 전처리 → diff 조회 → 리뷰 여부 판단 순으로 진행하고,
+    판단 결과에 따라 생략 사유 게시(SKIP) 또는 컨벤션 조회 후 리뷰(REVIEW)로 분기합니다.
+    """
     builder = StateGraph(state_schema=ReviewBotState, context_schema=ReviewBotContext)
 
     builder.add_node("request_token", request_token_node)
@@ -56,6 +61,11 @@ def build_review_graph():
 
 
 def build_question_graph():
+    """`/prism` 질문 응답 그래프를 조립해 컴파일합니다.
+
+    토큰 발급 → 전처리 후 review/comment 조회를 병렬로 수행하고,
+    둘을 합친 컨텍스트로 답변을 생성해 PR에 게시합니다.
+    """
     builder = StateGraph(
         state_schema=QuestionBotState, context_schema=QuestionBotContext
     )

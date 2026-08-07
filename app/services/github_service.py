@@ -12,9 +12,38 @@ from pydantic import TypeAdapter
 from app.core.config import AppSettings
 from app.schemas.response import GitHubFileItem
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 API_VERSION = "2026-03-10"
+
+
+async def _on_request(request: httpx.Request) -> None:
+    """요청 시작 시각을 남겨 응답 훅에서 소요 시간을 계산할 수 있게 합니다."""
+    request.extensions["started_at"] = time.perf_counter()
+
+
+async def _on_response(response: httpx.Response) -> None:
+    """Github API 호출의 상태 코드와 소요 시간을 남깁니다.
+
+    `response.elapsed` 는 본문을 읽기 전이라 이 시점에 접근할 수 없어 직접 잽니다.
+    """
+    request = response.request
+    started_at = request.extensions.get("started_at")
+    elapsed_ms = (time.perf_counter() - started_at) * 1000 if started_at else -1
+
+    level = logging.WARNING if response.status_code >= 400 else logging.INFO
+    logger.log(
+        level,
+        f"[github] {request.method} {request.url.path} "
+        f"-> {response.status_code} ({elapsed_ms:.0f}ms)",
+    )
+
+
+def build_http_client() -> httpx.AsyncClient:
+    """Github API 호출 로깅 훅이 달린 httpx 클라이언트를 만듭니다."""
+    return httpx.AsyncClient(
+        event_hooks={"request": [_on_request], "response": [_on_response]}
+    )
 
 
 def get_github_headers(token: str) -> dict:
@@ -35,11 +64,12 @@ class GitHubClient:
         self._key_file_path = settings.GITHUB_KEY_FILE_PATH
         self._client = client
 
-    async def aclose(self):
+    async def aclose(self) -> None:
+        """내부 httpx 클라이언트를 닫습니다. 앱 종료 시 호출합니다."""
         await self._client.aclose()
 
     def is_valid_webhook(self, payload_body: bytes, signature_header: str) -> bool:
-        """깃허브 웹훅 요청을 검증합니다."""
+        """webhook secret으로 서명을 계산해 요청이 깃허브에서 왔는지 검증합니다."""
         hash_object = hmac.new(
             self._webhook_secret.encode("utf-8"),
             msg=payload_body,
@@ -64,9 +94,7 @@ class GitHubClient:
         return jwt.encode(payload=payload, key=signing_key, algorithm="RS256")
 
     async def request_access_token(self, installation_id: str) -> str:
-        """JWT를 사용하여 깃허브 Access Token을 요청합니다."""
-        logger.info("Request installation access token")
-
+        """JWT로 인증해 해당 installation의 access token을 발급받습니다."""
         url = (
             f"https://api.github.com/app/installations/{installation_id}/access_tokens"
         )
@@ -85,9 +113,7 @@ class GitHubClient:
     async def get_pr_files(
         self, owner: str, repo: str, pull_number: int, token: str
     ) -> List[GitHubFileItem]:
-        """PR에서 변경된 파일 목록 및 변경 사항을 조회합니다."""
-        logger.info("Request PR Files")
-
+        """PR에서 변경된 파일 목록과 patch 내용을 조회합니다."""
         url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/files"
         headers = get_github_headers(token)
 
@@ -100,10 +126,11 @@ class GitHubClient:
     async def create_review(
         self, owner: str, repo: str, pull_number: int, token: str, event: str, body: str
     ) -> None:
-        """event에 따라 다른 로직 수행.
-        event: APPROVE, REQUEST_CHANGES, COMMENT"""
-        logger.info("Create comment")
+        """PR에 review를 생성합니다.
 
+        Args:
+            event: APPROVE, REQUEST_CHANGES, COMMENT 중 하나
+        """
         url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
         headers = get_github_headers(token=token)
 
@@ -115,10 +142,7 @@ class GitHubClient:
     async def create_comment(
         self, owner: str, repo: str, pull_number: int, token: str, body: str
     ) -> None:
-        """event에 따라 다른 로직 수행.
-        event: APPROVE, REQUEST_CHANGES, COMMENT"""
-        logger.info("Create comment")
-
+        """PR에 일반 comment를 생성합니다."""
         url = (
             f"https://api.github.com/repos/{owner}/{repo}/issues/{pull_number}/comments"
         )
@@ -131,10 +155,8 @@ class GitHubClient:
 
     async def get_reviews(
         self, owner: str, repo: str, pull_number: int, token: str
-    ) -> str:
-        """PR에 달린 review 조회"""
-        logger.info("Review 조회")
-
+    ) -> List[str]:
+        """PR에 달린 review 중 본문이 있는 것들의 body만 모아서 반환합니다."""
         url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
         header = get_github_headers(token=token)
 
@@ -148,16 +170,12 @@ class GitHubClient:
 
     async def get_comments(
         self, owner: str, repo: str, pull_number: int, token: str
-    ) -> list:
-        """PR에 달린 comment 조회"""
-        logger.info("Comment 조회")
-
+    ) -> List[str]:
+        """PR에 달린 comment 중 본문이 있는 것들의 body만 모아서 반환합니다."""
         url = (
             f"https://api.github.com/repos/{owner}/{repo}/issues/{pull_number}/comments"
         )
         header = get_github_headers(token=token)
-
-        logger.info(f"url: {url}")
 
         response = await self._client.get(url=url, headers=header)
         response.raise_for_status()
@@ -169,17 +187,18 @@ class GitHubClient:
 
     async def get_convention_files(
         self, owner: str, repo: str, dirpath: str, token: str
-    ):
-        """main 브랜치의 dirpath 아래의 파일들을 읽어온다"""
-        logger.info(f"{dirpath} 안의 파일들 정보 읽어오기")
+    ) -> List[dict]:
+        """main 브랜치의 dirpath 아래 파일 목록을 조회합니다.
 
+        디렉토리가 없으면(404) 빈 리스트를 반환합니다.
+        """
         url = f"https://api.github.com/repos/{owner}/{repo}/contents/{dirpath}?ref=main"
         header = get_github_headers(token=token)
 
         response = await self._client.get(url=url, headers=header)
 
         if response.status_code == 404:
-            logger.info(f"main 브랜치에 {dirpath} 디렉토리가 없습니다.")
+            logger.info(f"[github] main 브랜치에 {dirpath} 디렉토리가 없습니다.")
             return []
 
         response.raise_for_status()
@@ -199,10 +218,8 @@ class GitHubClient:
         repo: str,
         filepath: str,
         token: str,
-    ):
-        """filepath 로 파일 내용을 읽어온다"""
-        logger.info(f"{filepath} 읽어오기")
-
+    ) -> str:
+        """main 브랜치의 filepath 파일 내용을 base64 디코딩해서 반환합니다."""
         url = (
             f"https://api.github.com/repos/{owner}/{repo}/contents/{filepath}?ref=main"
         )

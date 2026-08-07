@@ -1,5 +1,4 @@
 import logging
-import httpx
 from dataclasses import dataclass
 from typing import Any
 
@@ -9,9 +8,9 @@ from app.core.config import AppSettings
 from app.core.llm import build_llm_chain, build_lite_llm
 from app.graph.agents import build_review_agent, build_question_agent
 from app.graph.builder import build_review_graph, build_question_graph
-from app.services.github_service import GitHubClient
+from app.services.github_service import GitHubClient, build_http_client
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -39,7 +38,7 @@ def build_container(settings: AppSettings | None = None) -> Container:
     llm = build_llm_chain(settings)
     lite_llm = build_lite_llm(settings)
 
-    github = GitHubClient(settings, httpx.AsyncClient())
+    github = GitHubClient(settings, build_http_client())
 
     review_agent = build_review_agent(
         model=llm,

@@ -19,7 +19,7 @@ def build_review_agent(model: BaseChatModel):
 
 
 def build_question_agent(model: BaseChatModel):
-    """단어 질문 agent를 조립합니다. 모델은 주입받습니다."""
+    """질문 agent를 조립합니다. 모델은 주입받습니다."""
     return create_agent(
         model=model,
         checkpointer=InMemorySaver(),

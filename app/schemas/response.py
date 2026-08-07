@@ -33,6 +33,8 @@ class ReviewRouterItem(BaseModel):
 
 
 class ReviewCommentItem(BaseModel):
+    """리뷰 코멘트 한 건. severity 순으로 정렬할 수 있습니다."""
+
     title: str = Field(
         description="한 줄로 요약한 리뷰 제목. 예: '네이밍 규칙 위반', 'SRP 위반', '파일 리소스 관리'"
     )
@@ -46,6 +48,7 @@ class ReviewCommentItem(BaseModel):
     _SEVERITY_ORDER: ClassVar[dict] = {"high": 1, "medium": 2, "low": 3}
 
     def __lt__(self, other: "ReviewCommentItem") -> bool:
+        """severity가 높은(high) 코멘트가 앞에 오도록 비교합니다."""
         self_order = self._SEVERITY_ORDER.get(self.severity, 99)
         other_order = self._SEVERITY_ORDER.get(other.severity, 99)
         return self_order < other_order

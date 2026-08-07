@@ -2,6 +2,8 @@
 
 
 class BaseAPIException(Exception):
+    """공통 에러 응답으로 변환되는 예외의 부모 클래스."""
+
     status_code: int = 500
     detail: str = "서버 내부 오류"
 

@@ -86,6 +86,7 @@ jobs:
           LANGSMITH_TRACING=true
           LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}
           LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}
+          LOG_LEVEL=ERROR
           EOF
       
       - name: Copy nginx.conf, docker-compose.yml, .env

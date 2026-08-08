@@ -219,7 +219,24 @@ class GitHubClient:
         filepath: str,
         token: str,
     ) -> str:
-        """main 브랜치의 filepath 파일 내용을 base64 디코딩해서 반환합니다."""
+        """main 브랜치의 filepath 파일 내용을 base64 디코딩해서 반환합니다.
+        바이너리 파일인 경우 content에 빈 문자열을 반환합니다."""
+        BINARY_EXTENSIONS = (
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".pdf",
+            ".zip",
+            ".tar",
+            ".gz",
+            ".exe",
+            ".dll",
+        )
+
+        if filepath.lower().endswith(BINARY_EXTENSIONS):
+            return "None"
+
         url = (
             f"https://api.github.com/repos/{owner}/{repo}/contents/{filepath}?ref=main"
         )

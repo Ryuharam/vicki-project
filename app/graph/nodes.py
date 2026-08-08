@@ -111,7 +111,27 @@ async def request_diff_node(
             {"filename": file.filename, "status": file.status, "patch": file.patch}
         )
 
-    return {"diff_files": diff_files}
+    if not diff_files:
+        return {"diff_files": [], "has_diff": "MISSING"}
+
+    return {"diff_files": diff_files, "has_diff": "EXIST"}
+
+
+async def generate_no_diff_response_node(
+    state: ReviewBotState, runtime: Runtime[ReviewBotContext]
+):
+    """check_diff_is_exist 조건부 엣지로 'MISSING' 분기한 결과 게시"""
+    logger.info("[no diff] diff가 없어 리뷰 진행하지 않음을 게시")
+
+    github = runtime.context["github"]
+
+    await github.create_comment(
+        owner=state["owner"],
+        repo=state["repo"],
+        pull_number=state["pull_number"],
+        token=state["access_token"],
+        body="변경된 파일이 없거나 컨벤션 문서만 변경되어 리뷰를 진행하지 않습니다.",
+    )
 
 
 async def router_node(state: ReviewBotState, runtime: Runtime[ReviewBotContext]):

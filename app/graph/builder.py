@@ -11,6 +11,7 @@ from app.graph.nodes import (
     review_preprocess_node,
     question_preprocess_node,
     request_diff_node,
+    generate_no_diff_response_node,
     router_node,
     post_skip_reason_node,
     request_convention_node,
@@ -23,7 +24,7 @@ from app.graph.nodes import (
     answer_node,
     post_answer_node,
 )
-from app.graph.edges import route_review
+from app.graph.edges import route_review, check_diff_is_exist
 
 
 def build_review_graph():
@@ -37,6 +38,7 @@ def build_review_graph():
     builder.add_node("request_token", request_token_node)
     builder.add_node("preprocess", review_preprocess_node)
     builder.add_node("request_diff", request_diff_node)
+    builder.add_node("no_diff", generate_no_diff_response_node)
     builder.add_node("router", router_node)
     builder.add_node("skip", post_skip_reason_node)
     builder.add_node("request_convention", request_convention_node)
@@ -47,7 +49,11 @@ def build_review_graph():
     builder.add_edge(START, "request_token")
     builder.add_edge("request_token", "preprocess")
     builder.add_edge("preprocess", "request_diff")
-    builder.add_edge("request_diff", "router")
+    builder.add_conditional_edges(
+        "request_diff",
+        check_diff_is_exist,
+        {"EXIST": "router", "MISSING": "no_diff"},
+    )
     builder.add_conditional_edges(
         "router", route_review, {"SKIP": "skip", "REVIEW": "request_convention"}
     )

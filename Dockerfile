@@ -17,14 +17,17 @@ RUN uv sync --frozen --no-dev
 # ─── 2. runtime ─────────────────────────────
 FROM python:3.14-slim AS runtime
 
-RUN groupadd --system app && useradd --system --gid app --no-create-home app
+RUN groupadd --gid 1000 app && useradd --uid 1000 --gid 1000 --no-create-home app
 
 WORKDIR /app
 
 COPY --from=builder --chown=app:app /app /app
 
+RUN mkdir -p /app/logs && chown app:app /app /app/logs
+
 ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    LOG_DIR=/app/logs
 
 USER app
 

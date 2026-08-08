@@ -86,7 +86,7 @@ jobs:
           LANGSMITH_TRACING=true
           LANGSMITH_API_KEY=${{ secrets.LANGSMITH_API_KEY }}
           LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}
-          LOG_LEVEL=ERROR
+          LOG_LEVEL=INFO
           EOF
       
       - name: Copy nginx.conf, docker-compose.yml, .env
@@ -114,11 +114,15 @@ jobs:
             echo "${{ secrets.CLOUDFLARE_ORIGIN_KEY }}" > origin.pem
             echo "${{ secrets.CLOUDFLARE_PRIVATE_KEY }}" > private.key
 
+            mkdir -p /home/${{ secrets.SERVER_USER }}/logs
+
             cd /home/${{ secrets.SERVER_USER }}
 
             docker compose pull
 
             docker compose up -d --remove-orphans
+
+            docker image prune -a -f
 
             sleep 10
             docker compose ps

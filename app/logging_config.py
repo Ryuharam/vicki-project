@@ -2,7 +2,7 @@ import os
 import logging
 import logging.config
 
-LOG_DIR = "logs"
+LOG_DIR = os.getenv("LOG_DIR", "logs")
 
 # 콘솔과 app.log에 남길 최소 레벨. 배포에서는 LOG_LEVEL=ERROR 처럼 올려서 줄입니다.
 # error.log는 이 값과 무관하게 항상 ERROR만 기록합니다.

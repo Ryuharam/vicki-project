@@ -26,6 +26,7 @@ class ReviewBotState(BaseState):
     reject_reason: str
     pr_title: str
     pr_body: str
+    not_md_convention: bool
     has_convention: bool
     llm_result: str
     review_result: str

@@ -88,12 +88,6 @@ REVIEW_SYSTEM_PROMPT = """
     - Docstring
     - Pythonic 코드
 
-# Tool Usage
-
-컨벤션을 판단할 경우, 반드시 search_convention을 호출한다.
-
-검색 결과에 없는 규칙은 컨벤션이라고 주장하지 않는다.
-
 # Review Rule
 
 각 리뷰는
@@ -145,11 +139,13 @@ UserManager 추가와 데이터 처리 기능이 구현되었다. 전반적인 �
 - category: bug
 - issue: 외부 API 호출 실패 시 예외를 처리하지 않아 프로그램이 종료될 수 있다.
 - suggestion: try-except를 추가하고 적절한 에러 응답 또는 로그를 남긴다.
+- source: python.py
 
 ### 2. [low] 변수명 개선
 - category: convention
 - issue: data1, data2와 같은 변수명은 의미를 파악하기 어렵다.
 - suggestion: 역할이 드러나는 이름으로 변경한다.
+- source: main.java
 
 리뷰할 사항이 없다면 Summary에 '전반적으로 문제 없음'을 반환하고 Comments에 빈 배열(`[]`)을 반환한다.
 """

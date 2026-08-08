@@ -172,6 +172,7 @@ async def request_convention_node(
         return {"has_convention": False, "conventions": "컨벤션 문서가 없습니다."}
 
     file_contents = []
+    not_md_convention = False
     for file in file_list:
         content = await github.get_convention_file(
             owner=state["owner"],
@@ -180,11 +181,19 @@ async def request_convention_node(
             token=state["access_token"],
         )
 
+        if file.get("name", "") and not file.get("name").endswith(".md"):
+            logger.info(f"[request_convention] {file.get("name")} 이 .md 파일이 아님")
+            not_md_convention = True
+
         file_contents.append({"filename": file.get("name"), "content": content})
 
     logger.info(f"[request_convention] 컨벤션 문서 {len(file_contents)}건 로드")
 
-    return {"conventions": file_contents, "has_convention": True}
+    return {
+        "conventions": file_contents,
+        "has_convention": True,
+        "not_md_convention": not_md_convention,
+    }
 
 
 async def review_node(
@@ -216,11 +225,14 @@ def parsing_output_node(
 
         if structured.verdict == "REQUEST_CHANGES":
             structured.summary += (
-                "\n\n⚠️ severity가 high인 부분은 꼭 수정하시기 바랍니다!"
+                "\n\n - ⚠️ severity가 **high**인 부분은 꼭 수정하시기 바랍니다!"
             )
 
+        if state["not_md_convention"]:
+            structured.summary += "\n - 참고 사항: 현재 컨벤션 분석 기능은 Markdown(.md) 파일만 지원하고 있습니다. 이에 따라 다른 형식의 컨벤션 문서는 이번 요약에 포함되지 않았습니다."
+
         if not state["has_convention"]:
-            structured.summary += "\nmain 브랜치의 루트에 `.convention` 디렉토리가 없어 컨벤션 문서 없이 리뷰를 진행했습니다."
+            structured.summary += "\n - 참고 사항: main 브랜치 루트에 .convention 디렉토리의 컨벤션 파일이 감지되지 않았습니다. 이에 따라 별도의 컨벤션 문서 적용 없이 리뷰가 완료되었습니다."
 
         review = parsing_response(structured)
 

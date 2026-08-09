@@ -1,176 +1,266 @@
-## 코드리뷰 봇 프로젝트
-GitHub 에서 사용자가 Pull Request를 열었을 때 코드 리뷰 후 comment를 달아주는 bot 프로젝트
+# 코드리뷰 봇 프로젝트
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![LangChain](https://img.shields.io/badge/langchain-%231C3C3C.svg?style=for-the-badge&logo=langchain&logoColor=white)
+![LangGraph](https://img.shields.io/badge/langgraph-%231C3C3C.svg?style=for-the-badge&logo=langgraph&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571.svg?style=for-the-badge&logo=fastapi)
+![Pydantic](https://img.shields.io/badge/pydantic-%23E92063.svg?style=for-the-badge&logo=pydantic&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=Cloudflare&logoColor=white)
+![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white)
+![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
+## 개요
+
+**Prism**은 GitHub Pull Request가 열리는 순간 자동으로 코드 리뷰를 남기는 GitHub App입니다.
+
+저장소에 앱을 설치하는 것만으로 사용할 수 있으며, 
+
+워크플로 파일 작성이나 CI 파이프라인 수정은 필요하지 않습니다.
+
+### 문제 정의
+
+코드 리뷰는 결함을 조기에 발견하고 코드 품질을 유지하는 가장 확실한 장치지만, 리뷰를 요청하는 것에 어려움이 있습니다.
+
+- **1인 개발 · 사이드 프로젝트** : 리뷰를 요청할 동료가 없어, 작성자 본인의 시야 밖에 있는 문제는 끝내 발견되지 않은 채 병합됩니다.
+- **소규모 팀** : 리뷰 요청이 특정 인원에게 집중되어 병목이 발생하고, PR이 며칠씩 대기 상태로 남습니다.
+- **컨벤션 준수** : 팀 컨벤션을 문서로 정리해 두어도, 매 리뷰에서 일관되게 확인되기는 어렵습니다.
+
+결과적으로 리뷰를 받고 싶어도 받을 수 없는 상황이 반복되고, 검증되지 않은 변경 사항이 그대로 메인 브랜치에 누적됩니다.
+
+### 해결 방식
+
+Prism은 **리뷰어의 부재를 메우는 것**을 목표로 합니다.
+
+| | 내용 |
+|---|---|
+| **간편한 도입** | GitHub App 설치 한 번으로 적용. 워크플로 파일·토큰 발급·별도 배포 불필요 |
+| **즉시 리뷰** | PR 생성 및 커밋 추가 시점에 변경 사항을 분석해 리뷰 등록. 리뷰어를 기다리지 않음 |
+| **팀 컨벤션 반영** | 저장소 `.convention` 디렉토리의 문서를 리뷰 기준으로 함께 적용해, 문서로만 존재하던 규칙을 실제 리뷰에 반영 |
+| **불필요한 리뷰 억제** | 문서 수정·포맷팅 등 리뷰 가치가 낮은 변경은 경량 모델이 사전에 판별해 생략. 알림 피로와 호출 비용을 절감 |
+| **대화형 후속 질문** | 리뷰 내용이 이해되지 않을 때 PR 댓글에 `/prism` 으로 질문하면, 기존 리뷰 맥락을 유지한 답변을 제공 |
+
+### 기대 효과
+
+- 리뷰어 유무와 무관하게 **모든 PR에 최소 1회의 리뷰를 보장**
+- 리뷰 대기 시간 제거를 통한 **개발 사이클 단축**
+- 컨벤션의 **문서화 수준에서 실제 적용 수준으로의 전환**
 
 ## 관련 링크
 - 서비스 주소
     https://vicki.ai.kr/
-- 프론트엔드 레포지토리
+- 프론트엔드
     https://github.com/Ryuharam/prism-fe
 
 ## 주요기능
 1. Web hook으로 PR / PR comment 이벤트 수신
 2. 코드 변경 사항 조회
 3. 리뷰가 필요한 변경인지 LLM으로 판단 (문서·포맷팅 변경은 skip)
-4. 팀 컨벤션 문서 조회 (RAG)
+4. 팀 컨벤션 문서 조회 
 5. 코드 리뷰 및 PR review 등록
 6. 리뷰에 대한 사용자 질문에 답변 (PR comment)
 
-## 구조도
-### 시스템 아키텍처
-<img width="459" height="435" alt="Image" src="https://github.com/user-attachments/assets/73ae106f-3aaa-4f21-b883-aba0178ac094" />
+## 영상 포트폴리오
+
+<!-- 아래 이미지를 클릭하면 영상으로 이동합니다. 썸네일은 16:9 가로 이미지를 권장합니다. -->
+<a href="영상_링크">
+  <img src="docs/images/thumbnail.png" alt="Prism 소개 영상" width="100%">
+</a>
+
+## 서비스 스크린 샷
+
+### 서비스 소개 페이지
+<img width="1920" height="927" alt="Image" src="https://github.com/user-attachments/assets/98cfdc93-cbef-4a54-927d-e6b406534836" />
+
+<img width="1920" height="929" alt="Image" src="https://github.com/user-attachments/assets/7ad21d33-2202-436e-a06f-27b946f288ea" />
+
+### 코드 리뷰 결과
+
+<img width="2750" height="1955" alt="Image" src="https://github.com/user-attachments/assets/95099a6d-3e21-4122-9878-1abc95ea4d60" />
 
 
-### 1. 전체 흐름
-개발자가 PR을 올리거나 리뷰에 질문 코멘트를 남기면, 이벤트 종류에 따라 서로 다른 LangGraph 워크플로우가 실행됩니다.
+### `/prism` 질문 & 답변
 
-```mermaid
-flowchart TD
-    DEV(["개발자<br/>PR 생성 · 커밋 푸시 · 코멘트 작성"])
+<img width="3095" height="1955" alt="Image" src="https://github.com/user-attachments/assets/f8e7ca9b-949a-42fc-b2ed-e67f6c20a567" />
 
-    subgraph GITHUB["GitHub"]
-        WH["GitHub App Webhook"]
-        CM["PR review · 코멘트"]
-    end
-
-    subgraph BOT["코드리뷰 봇 · FastAPI"]
-        EP["POST /webhook"]
-        SIG{"서명 검증<br/>HMAC-SHA256"}
-        REJ["403 Forbidden"]
-        EV{"X-Github-Event<br/>· action 확인"}
-        NOP["처리하지 않음<br/>(로그만 기록)"]
-    end
-
-    RG["리뷰 그래프<br/>(2번 항목)"]
-    QG["질문 응답 그래프<br/>(4번 항목)"]
-
-    DEV --> WH --> EP --> SIG
-    SIG -- 실패 --> REJ
-    SIG -- 성공 --> EV
-    EV -- "closed 등 · Bot 코멘트" --> NOP
-    EV -- "pull_request: opened · synchronize" --> RG
-    EV -- "issue_comment: created" --> QG
-    RG --> CM
-    QG --> CM
-    CM -.-> DEV
-```
-
-### 2. 리뷰 그래프 (pull_request 이벤트)
-diff를 모은 뒤 리뷰가 필요한 변경인지 먼저 판단하고, 필요한 경우에만 리뷰 Agent를 실행합니다.
-
-```mermaid
-flowchart TD
-    S(["START"])
-    N1["① preprocess<br/>Access Token 발급<br/>변경 파일(diff) 수집"]
-    N2{"② router<br/>lite LLM 구조화 출력<br/>리뷰 필요 여부 판단"}
-    N3["③ reject<br/>skip 이유를 review로 게시"]
-    N4["④ review<br/>리뷰 Agent 실행 (3번 항목)"]
-    N5["⑤ comment<br/>verdict + 리뷰 결과를<br/>PR review로 게시"]
-    E(["END"])
-
-    S --> N1 --> N2
-    N2 -- "SKIP<br/>(문서 · 포맷팅 · 네이밍만 변경)" --> N3 --> E
-    N2 -- "REVIEW<br/>(동작 코드 변경)" --> N4 --> N5 --> E
-```
-
-### 3. 리뷰 Agent 내부 (ReAct)
-`review` 노드가 호출하는 Agent는 필요할 때 스스로 컨벤션 문서를 검색하고, 더 볼 것이 없으면 리뷰를 확정합니다.
+## 아키텍처
 
 ```mermaid
 flowchart LR
-    IN(["PR 제목 · 본문 · diff"]) --> LLM
+    subgraph GH["GitHub"]
+        PR["Pull Request<br/>opened · synchronize"]
+        CM["Issue Comment<br/>/prism"]
+        API["GitHub REST API"]
+    end
 
-    LLM{"LLM<br/>(System Prompt: 리뷰 정책)"}
-    TOOL["search_convention"]
-    DB[("ChromaDB<br/>컨벤션 문서")]
-    OUT["ReviewComments<br/>summary · comments · verdict"]
-    MD(["Summary + Comments 마크다운<br/>verdict: APPROVE · REQUEST_CHANGES · COMMENT"])
+    subgraph SERVER["Server (Docker Compose)"]
+        NGINX["Nginx<br/>HTTPS 종단 · 프록시"]
+        APP["FastAPI<br/>POST /webhook"]
+        BG["BackgroundTasks"]
+        subgraph GRAPH["LangGraph"]
+            RG["Review Graph"]
+            QG["Question Graph"]
+        end
+    end
 
-    LLM -- "컨벤션 확인 필요" --> TOOL
-    TOOL -- "유사도 검색 (top 3)" --> DB
-    DB -. "관련 컨벤션 규칙" .-> LLM
-    LLM -- "리뷰 확정" --> OUT --> MD
+    subgraph MODEL["LLM"]
+        LITE["Lite Model<br/>리뷰 여부 판단"]
+        MAIN["Primary + Fallback<br/>Review · Question Agent"]
+    end
+
+    OBS["LangSmith<br/>트레이싱"]
+
+    PR -- webhook --> NGINX
+    CM -- webhook --> NGINX
+    NGINX --> APP
+    APP -- "서명 검증 후 200 즉시 응답" --> BG
+    BG --> RG
+    BG --> QG
+    RG <-- "diff · 컨벤션 · 리뷰 등록" --> API
+    QG <-- "review · comment 조회 · 답변 등록" --> API
+    RG --> LITE
+    RG --> MAIN
+    QG --> MAIN
+    GRAPH -.-> OBS
+
+    classDef gh fill:#f6f8fa,stroke:#8b949e,color:#24292f
+    classDef srv fill:#e7f0fe,stroke:#4285f4,color:#174ea6
+    classDef llm fill:#eef7ee,stroke:#34a853,color:#0d652d
+    classDef obs fill:#fdf3e3,stroke:#f9ab00,color:#7f5700
+    class PR,CM,API gh
+    class NGINX,APP,BG,RG,QG srv
+    class LITE,MAIN llm
+    class OBS obs
 ```
 
-> comments는 severity(high → medium → low) 순으로 정렬되며, verdict가 `REQUEST_CHANGES`면 summary에 경고 문구가 덧붙습니다.
+- **Nginx** : HTTPS 종단, FastAPI로 프록시
+- **FastAPI** : 웹훅 서명(`x-hub-signature-256`) 검증 후 이벤트를 분기하고, GitHub의 재전송을 막기 위해 **먼저 200을 응답**한 뒤 그래프를 백그라운드로 실행
+- **LangGraph** : 리뷰용 / 질문용 그래프 2개를 부팅 시점에 컴파일해 재사용 (`app/core/container.py`)
+- **LLM** : diff 훑기용 경량 모델과 실제 리뷰·답변 생성용 모델을 분리, primary 실패 시 fallback으로 전환
 
-### 4. 질문 응답 그래프 (issue_comment 이벤트)
-개발자가 PR에 코멘트로 질문하면, 봇이 남긴 리뷰 내용을 근거로 답변합니다.
+## 요청 처리 흐름
+
+### 1. PR이 등록됐을 때 (`pull_request` : opened / synchronize)
 
 ```mermaid
 flowchart TD
-    S(["START"])
-    N1["① preprocess<br/>Access Token 발급<br/>코멘트 · PR 정보 추출"]
-    N2["② answer<br/>기존 PR review 조회 후<br/>질문 Agent 실행"]
-    N3["③ post<br/>답변을 PR 코멘트로 게시"]
-    E(["END"])
-    AG{"질문 Agent<br/>QuestionComment 구조화 출력"}
-    MEM[("InMemorySaver<br/>thread_id = repo_id:pull_number")]
+    S(["PR opened · synchronize"]) --> T["request_token<br/>installation access token 발급"]
+    T --> P["preprocess<br/>owner · repo · PR 번호 추출"]
+    P --> D["request_diff<br/>변경 파일 조회<br/>(.convention 변경분 제외)"]
+    D --> C1{"diff 존재?"}
+    C1 -- MISSING --> ND["no_diff<br/>리뷰 미진행 안내 comment"]
+    ND --> E1([END])
+    C1 -- EXIST --> R["router<br/>Lite LLM으로 리뷰 필요 여부 판단"]
+    R --> C2{"review_decision"}
+    C2 -- SKIP --> SK["skip<br/>생략 사유를 COMMENT로 게시"]
+    SK --> E2([END])
+    C2 -- REVIEW --> CV["request_convention<br/>main 브랜치 .convention/*.md 로드"]
+    CV --> RV["review<br/>Review Agent가 리뷰 생성"]
+    RV --> PS["parsing<br/>structured output → Markdown 변환"]
+    PS --> PO["post_review<br/>verdict에 맞춰 PR Review 등록"]
+    PO --> E3([END])
 
-    S --> N1 --> N2 --> N3 --> E
-    N2 -- "리뷰 내용 + 사용자 질문" --> AG
-    AG -- "요약 + 답변" --> N2
-    AG -. "대화 기록 저장 · 조회" .-> MEM
+    classDef skip fill:#fdecea,stroke:#d93025,color:#a50e0e
+    classDef done fill:#e6f4ea,stroke:#34a853,color:#0d652d
+    class ND,SK skip
+    class PO done
 ```
 
-> PR 하나를 하나의 대화로 취급합니다. 질문 Agent는 `thread_id = {repo_id}:{pull_number}` 로 대화 기록을 유지하므로 이어지는 질문도 문맥이 유지됩니다. (프로세스 메모리에 저장되므로 재시작 시 초기화됩니다.)
+- 문서·포맷팅만 바뀐 PR은 `router`에서 걸러 **리뷰 없이 사유만 남깁니다.**
+- 컨벤션 문서가 없거나 `.md`가 아닌 파일이 섞여 있으면, 리뷰는 그대로 진행하되 Summary에 안내 문구를 덧붙입니다.
 
-### 5. 컨벤션 문서 등록 (RAG 인덱싱)
-리뷰에 사용할 팀 컨벤션 문서를 미리 벡터 DB에 넣어 두는 별도 흐름입니다.
+### 2. `/prism`으로 사용자가 질문했을 때 (`issue_comment` : created)
 
 ```mermaid
-flowchart LR
-    FILE(["컨벤션 문서<br/>(.md 등)"]) --> API["POST /convention"]
-    API --> HASH{"이미 등록된 문서?<br/>SHA256 해시 비교"}
-    HASH -- 있음 --> SKIP["저장 생략"]
-    HASH -- 없음 --> SPLIT["문서 분할<br/>chunk 500 / overlap 50"]
-    SPLIT --> EMB["임베딩 생성"]
-    EMB --> DB[("ChromaDB<br/>metadata: repo_id · filename · filehash")]
+flowchart TD
+    S(["issue_comment created"]) --> G1{"PR의 comment인가?"}
+    G1 -- No --> X([무시 · 200 응답])
+    G1 -- Yes --> G2{"Bot 작성 · 닫힌 PR ·<br/>/prism 명령 아님?"}
+    G2 -- 해당됨 --> X
+    G2 -- 통과 --> T["request_token<br/>installation access token 발급"]
+    T --> P["question_preprocess<br/>PR 정보 + 질문 본문 추출"]
+    P --> RQ["request_reviews<br/>PR review 조회"]
+    P --> RC["request_comments<br/>PR comment 조회"]
+    RQ --> CB["context_build<br/>질문 + 리뷰 + 대화 이력 병합"]
+    RC --> CB
+    CB --> A["answer<br/>Question Agent가 답변 생성"]
+    A --> PA["post_answer<br/>PR comment로 게시"]
+    PA --> E([END])
+
+    classDef skip fill:#fdecea,stroke:#d93025,color:#a50e0e
+    classDef done fill:#e6f4ea,stroke:#34a853,color:#0d652d
+    class X skip
+    class PA done
 ```
 
-## 프로젝트 구조
+- `request_reviews`와 `request_comments`는 **병렬로 실행**되어 두 조회가 끝난 뒤 `context_build`에서 합쳐집니다.
+- 봇 자신의 comment는 무시하므로 답변이 다시 웹훅을 부르는 루프가 생기지 않습니다.
+
+## 디렉토리 구조
 ```
 .
 ├── Dockerfile
 ├── README.md
 ├── app
 │   ├── api
-│   │   ├── deps.py
-│   │   └── webhook_router.py
+│   │   ├── deps.py               # FastAPI 의존성 주입 (Container 주입)
+│   │   └── webhook_router.py     # POST /webhook - 서명 검증 · 이벤트 분기 · 그래프 실행
 │   ├── core
-│   │   ├── config.py
-│   │   ├── container.py
-│   │   └── llm.py
+│   │   ├── config.py             # .env 기반 설정 (pydantic-settings)
+│   │   ├── container.py          # 의존성 조립 지점 (부팅 시 1회, 실패 시 fail fast)
+│   │   └── llm.py                # LLM 생성 · primary/fallback 체인 구성
 │   ├── exceptions
-│   │   ├── custom_exception.py
-│   │   └── handler.py
+│   │   ├── custom_exception.py   # 도메인 예외 정의
+│   │   └── handler.py            # 전역 예외 핸들러 (에러 응답 형식 통일)
 │   ├── graph
-│   │   ├── agents.py
-│   │   ├── builder.py
-│   │   ├── edges.py
-│   │   ├── nodes.py
-│   │   └── prompts.py
-│   ├── main.py
-│   ├── models
-│   │   ├── base.py
-│   │   ├── convention.py
-│   │   ├── repository.py
-│   │   ├── session.py
-│   │   └── user.py
+│   │   ├── agents.py             # review · question agent 정의 (structured output)
+│   │   ├── builder.py            # LangGraph 그래프 조립 (노드 · 엣지 연결)
+│   │   ├── edges.py              # 조건부 엣지 (diff 존재 여부 · 리뷰 여부 분기)
+│   │   ├── nodes.py              # 그래프 각 단계의 실제 처리 로직
+│   │   └── prompts.py            # 시스템 프롬프트 모음
+│   ├── logging_config.py         # 로깅 포맷 · 레벨 · 파일 핸들러 설정
+│   ├── main.py                   # FastAPI 앱 진입점 (lifespan에서 Container 생성)
 │   ├── schemas
-│   │   ├── response.py
-│   │   └── state.py
+│   │   ├── response.py           # LLM 응답 스키마 (리뷰 · 답변 구조 정의)
+│   │   └── state.py              # 그래프 State · Context 스키마
 │   └── services
-│       ├── convention_service.py
-│       └── github_service.py
-├── db
-├── docker-compose.yml
-├── docs
-├── nginx.conf
-├── pyproject.toml
+│       └── github_service.py     # GitHub API 클라이언트 (토큰 발급 · 조회 · 등록)
+├── docker-compose.yml            # nginx + app 컨테이너 구성
+├── docs                          # 개발 회고 · 문서
+├── nginx.conf                    # HTTPS 종단 · 리버스 프록시 설정
+├── pyproject.toml                # 프로젝트 메타데이터 · 의존성 (uv)
 ├── test
-│   └── test_smoke.py
 └── uv.lock
 ```
 
-## 예시 화면
-<img width="941" height="814" alt="Image" src="https://github.com/user-attachments/assets/d9c7c74a-955d-44c1-8099-6b662d9884f0" />
+## 실행 방법
+1. 루트 디렉토리에 `.env` 생성
+```bash
+# ── GitHub App ────────────────────────────────
+WEBHOOK_SECRET=                              # 웹훅 서명(x-hub-signature-256) 검증용 시크릿
+GITHUB_CLIENT_ID=                            # GitHub App의 Client ID (JWT 발급에 사용)
+GITHUB_KEY_FILE_PATH=                        # GitHub App 개인 키(.pem) 경로
+
+# ── LLM ───────────────────────────────────────
+LLM_PRIMARY=google_genai:gemini-2.5-flash    # 리뷰·답변 생성 주 모델 (provider:model 형식)
+LLM_FALLBACKS=                               # rate limit 시 대체할 모델, 쉼표로 구분 (없으면 비워둠)
+LITE_MODEL=                                  # 리뷰 필요 여부 판단용 경량 모델
+
+GOOGLE_API_KEY=                              # google_genai 사용 시 필수
+ANTHROPIC_API_KEY=                           # anthropic 사용 시 필수
+
+# ── 배포 ──────────────────────────────────────
+DOCKER_USERNAME=                             # docker-compose가 참조하는 이미지 네임스페이스
+
+# ── 관측 ──────────────────────────────────────
+LANGSMITH_TRACING=true                       # LangSmith 트레이싱 활성화 여부
+LANGSMITH_API_KEY=                           # LangSmith API 키
+LANGSMITH_PROJECT=                           # 트레이스가 기록될 프로젝트명
+
+LOG_LEVEL=INFO                               # 로그 레벨 (DEBUG / INFO / WARNING / ERROR)
+```
+2. uv 실행
+
+    - `uv run --env-file .env uvicorn app.main:app --reload`
+

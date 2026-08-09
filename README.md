@@ -77,12 +77,11 @@ Prism은 **리뷰어의 부재를 메우는 것**을 목표로 합니다.
 
 ### 코드 리뷰 결과
 
-<img width="2750" height="1955" alt="Image" src="https://github.com/user-attachments/assets/95099a6d-3e21-4122-9878-1abc95ea4d60" />
-
+<img width="3095" height="1955" alt="Image" src="https://github.com/user-attachments/assets/f8e7ca9b-949a-42fc-b2ed-e67f6c20a567" />
 
 ### `/prism` 질문 & 답변
 
-<img width="3095" height="1955" alt="Image" src="https://github.com/user-attachments/assets/f8e7ca9b-949a-42fc-b2ed-e67f6c20a567" />
+<img width="2750" height="1955" alt="Image" src="https://github.com/user-attachments/assets/95099a6d-3e21-4122-9878-1abc95ea4d60" />
 
 ## 아키텍처
 

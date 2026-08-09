@@ -61,12 +61,8 @@ Prism은 **리뷰어의 부재를 메우는 것**을 목표로 합니다.
 5. 코드 리뷰 및 PR review 등록
 6. 리뷰에 대한 사용자 질문에 답변 (PR comment)
 
-## 영상 포트폴리오
-
-<!-- 아래 이미지를 클릭하면 영상으로 이동합니다. 썸네일은 16:9 가로 이미지를 권장합니다. -->
-<a href="영상_링크">
-  <img src="docs/images/thumbnail.png" alt="Prism 소개 영상" width="100%">
-</a>
+## 서비스 소개 영상
+[![서비스 소개 영상](http://img.youtube.com/vi/a03KrndPUb0/0.jpg)](https://youtu.be/a03KrndPUb0)
 
 ## 서비스 스크린 샷
 
